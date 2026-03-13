@@ -1,0 +1,10 @@
+[build]
+builder = "nixpacks"
+buildCommand = "NPM_CONFIG_PRODUCTION=false npm install --no-fund --no-audit && npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/"
+healthcheckTimeout = 60
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
