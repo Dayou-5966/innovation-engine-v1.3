@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 BACKEND="$ROOT/backend"
 FRONTEND="$ROOT/frontend"
 NODE_BIN="$HOME/.nvm/versions/node/v20.20.0/bin"
-PYTHON="$BACKEND/.venv/bin/python3"
+PYTHON="$BACKEND/venv/bin/python3"
 
 # Kill anything on ports 8000 and 3000 from a previous run
 for port in 8000 3000; do

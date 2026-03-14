@@ -5,7 +5,7 @@ import {
     Brain, Globe, BarChart3, FileText, TrendingUp,
     AlertTriangle, CheckCircle2, Lightbulb, Clock,
     Zap, ShieldAlert, BookOpen, Info, Target, Layers,
-    RefreshCw, RadarIcon, Users, LineChart
+    RefreshCw, RadarIcon, Users, LineChart, Search, Download
 } from "lucide-react";
 
 // ── Section wrapper ───────────────────────────────────────────────────────────
@@ -293,6 +293,14 @@ export function Guide({ aiModel }: { aiModel: string }) {
                             badge: "🕸️ Radar Chart", color: "border-l-4 border-sky-400 dark:border-sky-600 pl-4",
                             desc: "A visual radar chart maps the five D0 scorecard dimensions (Strategic Alignment, Disruptive Potential, Technical Feasibility, Commercial Impact, Scalability) onto polar axes, making it easy to spot which dimensions are strong or weak at a glance."
                         },
+                        {
+                            badge: "🤖 Agent Summaries", color: "border-l-4 border-emerald-400 dark:border-emerald-600 pl-4",
+                            desc: "Direct feedback and synthesis from the three core personas: Strategist (alignment), Market Researcher (desirability/feasibility), and Risk Specialist (financial viability)."
+                        },
+                        {
+                            badge: "📥 High-Fidelity PDF Export", color: "border-l-4 border-zinc-400 dark:border-zinc-600 pl-4",
+                            desc: "At the top right of any report, click 'Export PDF' to save a bespoke, visually perfect copy of the entire valuation dashboard directly to your local machine using the native File System Access API."
+                        },
                     ].map(r => (
                         <div key={r.badge} className={`space-y-1 ${r.color}`}>
                             <p className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">{r.badge}</p>
@@ -385,6 +393,31 @@ export function Guide({ aiModel }: { aiModel: string }) {
                     <Callout type="info">
                         Model switches happen immediately. Any evaluations initiated after changing the dropdown will utilize the new Agent architecture natively.
                     </Callout>
+                </div>
+            </Section>
+
+            {/* ── 7b. Deep Research Integration ──────────────────────────────── */}
+            <Section id="deep-research" title="Deep Research Integration" icon={<Search className="h-5 w-5" />}>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 font-light leading-relaxed">
+                    Version 1.3 introduces genuine Deep Research capabilities to the Innovation Engine, bypassing standard search grounding for asynchronous, exhaustive internet exploration.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-5 space-y-2">
+                        <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2"><Workflow className="h-4 w-4 text-primary" /> How to Enable</h4>
+                        <ol className="space-y-1.5 text-sm text-zinc-600 dark:text-zinc-400 font-light">
+                            <li className="flex gap-2"><span className="text-primary font-bold">1.</span>Locate the <strong>Deep Research</strong> toggle at the bottom of the sidebar.</li>
+                            <li className="flex gap-2"><span className="text-primary font-bold">2.</span>Switch it on to reveal the Deep Research model selector.</li>
+                            <li className="flex gap-2"><span className="text-primary font-bold">3.</span>Select the <code className="font-mono text-[10px] bg-zinc-200 dark:bg-zinc-800 px-1 py-0.5 rounded">deep-research-pro-preview-12-2025</code> agent (or newer).</li>
+                        </ol>
+                    </div>
+                    <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-5 space-y-2">
+                        <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2"><Brain className="h-4 w-4 text-primary" /> How it Works</h4>
+                        <ul className="space-y-1.5 text-sm text-zinc-600 dark:text-zinc-400 font-light list-disc list-inside">
+                            <li>Replaces standard Google Search Grounding with long-running, multi-step reasoning web navigation.</li>
+                            <li>Ideal for complex technical feasibility or obscure patent/market searches.</li>
+                            <li><strong>Note:</strong> Evaluations using Deep Research will take significantly longer (up to 15-20+ minutes) due to the depth of exploration.</li>
+                        </ul>
+                    </div>
                 </div>
             </Section>
 

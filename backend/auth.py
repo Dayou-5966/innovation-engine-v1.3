@@ -12,7 +12,7 @@ load_dotenv()
 # JWT_SECRET is used exclusively for signing tokens — separate from the login password
 JWT_SECRET = os.environ.get("JWT_SECRET", "innovation-engine-jwt-secret-key")
 # ADMIN_HASH is the bcrypt hash of the actual gateway password stored in .env
-ADMIN_HASH = os.environ.get("ADMIN_HASH", "").encode("utf-8")
+ADMIN_HASH = os.environ.get("ADMIN_HASH", "").strip()
 ALGORITHM = "HS256"
 MULTI_USER_MODE = os.environ.get("MULTI_USER_MODE", "false").lower() == "true"
 
@@ -26,7 +26,7 @@ def verify_password(plain_password: str) -> bool:
         fallback = os.environ.get("ADMIN_SECRET", "EUREKA")
         return plain_password == fallback
     try:
-        return bcrypt.checkpw(plain_password.encode("utf-8"), ADMIN_HASH)
+        return bcrypt.checkpw(plain_password.encode("utf-8"), ADMIN_HASH.encode("utf-8"))
     except Exception:
         return False
 
