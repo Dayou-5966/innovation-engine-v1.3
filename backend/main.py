@@ -22,9 +22,7 @@ from database import engine, SessionLocal
 from engine import evaluate_idea
 from genesis import generate_concepts
 from auth import (
-    create_access_token, verify_token, verify_password,
-    verify_user_password, hash_password, get_user_id_from_token,
-    MULTI_USER_MODE,
+    create_access_token, verify_token, verify_password
 )
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -40,25 +38,34 @@ app_log = logging.getLogger("tie.app")
 models.Base.metadata.create_all(bind=engine)
 
 # Add columns introduced after initial schema without dropping data
+# NOTE: Migrations are hardcoded to prevent SQL injection — do NOT use f-strings for DDL.
 try:
     from sqlalchemy import inspect as sa_inspect, text as sa_text
     inspector = sa_inspect(engine)
 
-    def _add_column_if_missing(table: str, column: str, ddl: str):
-        if table in inspector.get_table_names():
-            existing = [c["name"] for c in inspector.get_columns(table)]
-            if column not in existing:
-                with engine.connect() as conn:
-                    conn.execute(sa_text(f"ALTER TABLE {table} ADD COLUMN {ddl}"))
-                    conn.commit()
-                    app_log.info("Migration: added '%s' to '%s'", column, table)
+    _MIGRATIONS = [
+        # (table, column, full DDL statement)
+        ("evaluations", "model_used", "ALTER TABLE evaluations ADD COLUMN model_used VARCHAR DEFAULT 'unknown'"),
+    ]
 
-    _add_column_if_missing("evaluations", "model_used", "model_used VARCHAR DEFAULT 'unknown'")
-    _add_column_if_missing("evaluations", "user_id", "user_id INTEGER")
-    _add_column_if_missing("mandate_documents", "user_id", "user_id INTEGER")
+    for _tbl, _col, _ddl in _MIGRATIONS:
+        if _tbl in inspector.get_table_names():
+            existing = [c["name"] for c in inspector.get_columns(_tbl)]
+            if _col not in existing:
+                with engine.connect() as conn:
+                    conn.execute(sa_text(_ddl))
+                    conn.commit()
+                    app_log.info("Migration: added '%s' to '%s'", _col, _tbl)
 
 except Exception as exc:
     app_log.warning("Migration check (non-fatal): %s", exc)
+
+# ── Critical environment variable validation ──────────────────────────────────
+if not os.environ.get("GEMINI_API_KEY"):
+    raise RuntimeError(
+        "[FATAL] GEMINI_API_KEY is not set. Every evaluation will fail. "
+        "Please set it in your .env file before starting the server."
+    )
 
 # ── Rate limiter ──────────────────────────────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address, default_limits=[])
@@ -109,9 +116,6 @@ class LoginRequest(BaseModel):
     username: str = "admin"   # optional; defaults to "admin" for backward compat
 
 
-class CreateUserRequest(BaseModel):
-    username: str
-    password: str
 
 
 # ── DB dependency ─────────────────────────────────────────────────────────────
@@ -193,13 +197,16 @@ def _extract_text_from_pdf_gemini(data: bytes, filename: str) -> str:
         app_log.info("Uploading %s to Gemini File API...", filename)
         uploaded_file = client.files.upload(file=temp_file_path, config={"display_name": filename})
 
-        while True:
+        max_file_polls = 60  # 60 × 2s = 2 minute timeout
+        for _poll_i in range(max_file_polls):
             file_info = client.files.get(name=uploaded_file.name)
             if file_info.state.name == "ACTIVE":
                 break
             elif file_info.state.name == "FAILED":
                 raise ValueError("Gemini failed to process the uploaded file.")
             time.sleep(2)
+        else:
+            raise TimeoutError(f"Gemini File API did not become ACTIVE after {max_file_polls * 2}s")
 
         prompt = (
             "Please transcribe this document exactly. For any text, extract it verbatim. "
@@ -287,15 +294,6 @@ def read_root():
 
 @app.post("/api/token")
 def api_token(payload: LoginRequest, db: Session = Depends(get_db)):
-    if MULTI_USER_MODE and payload.username != "admin":
-        user = db.query(models.User).filter(models.User.username == payload.username).first()
-        if not user or not user.is_active or not verify_user_password(payload.password, user.password_hash):
-            audit_log.warning("Failed login attempt for username=%s", payload.username)
-            raise HTTPException(status_code=401, detail="Unauthorized access")
-        token = create_access_token(username=user.username, user_id=user.id)
-        audit_log.info("User '%s' (id=%s) authenticated", user.username, user.id)
-        return {"access_token": token, "token_type": "bearer"}
-
     # Legacy single-password auth
     if not verify_password(payload.password):
         audit_log.warning("Failed legacy admin login attempt")
@@ -303,58 +301,6 @@ def api_token(payload: LoginRequest, db: Session = Depends(get_db)):
     token = create_access_token(username="admin")
     audit_log.info("Admin authenticated via legacy single-password mode")
     return {"access_token": token, "token_type": "bearer"}
-
-
-# ── User management (multi-user mode) ─────────────────────────────────────────
-
-@app.post("/api/users")
-def create_user(
-    payload: CreateUserRequest,
-    db: Session = Depends(get_db),
-    token_payload: dict = Depends(verify_token),
-):
-    """Create a new user. Admin-only endpoint."""
-    if token_payload.get("sub") != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can create users.")
-    if not MULTI_USER_MODE:
-        raise HTTPException(status_code=400, detail="Multi-user mode is disabled.")
-    if db.query(models.User).filter(models.User.username == payload.username).first():
-        raise HTTPException(status_code=409, detail="Username already exists.")
-    user = models.User(username=payload.username, password_hash=hash_password(payload.password))
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    audit_log.info("Admin created new user '%s' (id=%s)", user.username, user.id)
-    return {"id": user.id, "username": user.username, "created_at": user.created_at}
-
-
-@app.get("/api/users")
-def list_users(
-    db: Session = Depends(get_db),
-    token_payload: dict = Depends(verify_token),
-):
-    """List all users. Admin-only."""
-    if token_payload.get("sub") != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can list users.")
-    users = db.query(models.User).all()
-    return {"users": [{"id": u.id, "username": u.username, "is_active": u.is_active, "created_at": u.created_at} for u in users]}
-
-
-@app.delete("/api/users/{user_id}")
-def delete_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    token_payload: dict = Depends(verify_token),
-):
-    if token_payload.get("sub") != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can delete users.")
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    user.is_active = False
-    db.commit()
-    audit_log.info("Admin deactivated user id=%s ('%s')", user_id, user.username)
-    return {"success": True, "deactivated_id": user_id}
 
 
 # ── Mandate Document endpoints ────────────────────────────────────────────────
@@ -365,7 +311,11 @@ async def upload_mandate_document(
     db: Session = Depends(get_db),
     token_payload: dict = Depends(verify_token),
 ):
-    data = await file.read()
+    try:
+        data = await file.read()
+    finally:
+        await file.close()
+
     if len(data) > 50 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="File too large (max 50 MB).")
 
@@ -376,12 +326,10 @@ async def upload_mandate_document(
     elif fname.endswith(".md"):
         mime_type = "text/markdown"
 
-    user_id = get_user_id_from_token(token_payload)
     doc = models.MandateDocument(
         filename=file.filename,
         mime_type=mime_type,
         file_data=data,
-        user_id=user_id,
     )
     app_log.info("Uploading mandate doc: %s (mime=%s, %d bytes)", file.filename, mime_type, len(data))
     db.add(doc)
@@ -393,7 +341,7 @@ async def upload_mandate_document(
         raise HTTPException(status_code=500, detail="Database insertion failed")
 
     preview = "PDF Document (Binary)" if mime_type == "application/pdf" else data.decode("utf-8", errors="replace")[:300]
-    audit_log.info("Mandate doc uploaded: id=%s filename=%s user_id=%s", doc.id, doc.filename, user_id)
+    audit_log.info("Mandate doc uploaded: id=%s filename=%s", doc.id, doc.filename)
     return {"id": doc.id, "filename": doc.filename, "preview": preview, "char_count": len(data), "created_at": doc.created_at}
 
 
@@ -402,12 +350,7 @@ def list_mandate_documents(
     db: Session = Depends(get_db),
     token_payload: dict = Depends(verify_token),
 ):
-    user_id = get_user_id_from_token(token_payload)
-    # Show global docs (user_id IS NULL) + user's own docs
     query = db.query(models.MandateDocument).order_by(models.MandateDocument.created_at.asc())
-    if user_id is not None:
-        from sqlalchemy import or_
-        query = query.filter(or_(models.MandateDocument.user_id == user_id, models.MandateDocument.user_id.is_(None)))
     docs = query.all()
     results = []
     for d in docs:
@@ -435,7 +378,7 @@ def delete_mandate_document(
 def get_mandate_document_content(
     doc_id: int,
     db: Session = Depends(get_db),
-    token: str = None,
+    token: str = None,  # Query-param auth: frontend embeds docs via <iframe> which can't send Authorization headers
 ):
     from auth import JWT_SECRET, ALGORITHM
     import jwt as _jwt
@@ -471,9 +414,8 @@ def api_evaluate(
     if not payload.idea or not payload.idea.strip():
         raise HTTPException(status_code=400, detail="Idea payload cannot be empty.")
 
-    user_id = get_user_id_from_token(token_payload)
     docs = db.query(models.MandateDocument).order_by(models.MandateDocument.created_at.asc()).all()
-    audit_log.info("Sync evaluate started: user_id=%s model=%s idea='%s...'", user_id, payload.model, payload.idea[:60])
+    audit_log.info("Sync evaluate started: model=%s idea='%s...'", payload.model, payload.idea[:60])
 
     try:
         result = evaluate_idea(
@@ -499,7 +441,6 @@ def api_evaluate(
             recommendation=result.get("Recommendation", "N/A"),
             full_json=json.dumps(result),
             model_used=payload.model,
-            user_id=user_id,
         )
         db.add(db_eval)
         db.commit()
@@ -526,7 +467,7 @@ def api_evaluate_async(
     if not payload.idea or not payload.idea.strip():
         raise HTTPException(status_code=400, detail="Idea payload cannot be empty.")
 
-    user_id = get_user_id_from_token(token_payload)
+
     docs = db.query(models.MandateDocument).order_by(models.MandateDocument.created_at.asc()).all()
     mandate_docs = [_DocProto(d.filename, d.mime_type, d.file_data) for d in docs]
 
@@ -538,14 +479,13 @@ def api_evaluate_async(
         status="running",
         idea=payload.idea,
         model_used=payload.model,
-        user_id=user_id,
         webhook_url=payload.webhook_url or None,
     )
     db.add(job_record)
     db.commit()
 
-    audit_log.info("Async job created: job_id=%s user_id=%s model=%s idea='%s...'",
-                   job_id, user_id, payload.model, payload.idea[:60])
+    audit_log.info("Async job created: job_id=%s model=%s idea='%s...'",
+                   job_id, payload.model, payload.idea[:60])
 
     _progress_cb, _check_cancelled = _make_job_callbacks(job_id)
 
@@ -573,7 +513,6 @@ def api_evaluate_async(
                     recommendation=result.get("Recommendation", "N/A"),
                     full_json=json.dumps(result),
                     model_used=payload.model,
-                    user_id=user_id,
                 )
                 s.add(db_eval)
                 s.commit()
@@ -675,15 +614,12 @@ def api_rerun_evaluation(
     new_model = body.get("model", record.model_used or os.environ.get("DEFAULT_MODEL", "gemini-2.5-flash-lite"))
     overrides = body.get("overrides", {})
     webhook_url = body.get("webhook_url", "")
-    user_id = get_user_id_from_token(token_payload)
+    deep_research_enabled = body.get("deep_research_enabled", False)
+    deep_research_model = body.get("deep_research_model", os.environ.get("DEFAULT_DEEP_RESEARCH_MODEL", "deep-research-pro-preview-12-2025"))
+
 
     # Kick off as an async job
     docs = db.query(models.MandateDocument).order_by(models.MandateDocument.created_at.asc()).all()
-
-    class _DocProto:
-        def __init__(self, f, m, d):
-            self.filename = f; self.mime_type = m; self.file_data = d
-
     mandate_docs = [_DocProto(d.filename, d.mime_type, d.file_data) for d in docs]
 
     job_id = str(uuid.uuid4())
@@ -692,7 +628,6 @@ def api_rerun_evaluation(
         status="running",
         idea=record.idea,
         model_used=new_model,
-        user_id=user_id,
         webhook_url=webhook_url or None,
     )
     db.add(job_record)
@@ -713,6 +648,8 @@ def api_rerun_evaluation(
                 overrides=overrides,
                 progress_callback=_progress_cb,
                 check_cancelled=_check_cancelled,
+                deep_research_enabled=deep_research_enabled,
+                deep_research_model=deep_research_model,
             )
             if not result or not isinstance(result, dict):
                 raise ValueError("Pipeline returned empty or invalid response.")
@@ -725,7 +662,6 @@ def api_rerun_evaluation(
                     recommendation=result.get("Recommendation", "N/A"),
                     full_json=json.dumps(result),
                     model_used=new_model,
-                    user_id=user_id,
                 )
                 s.add(db_eval)
                 s.commit()
@@ -761,11 +697,7 @@ def api_history(
     db: Session = Depends(get_db),
     token_payload: dict = Depends(verify_token),
 ):
-    user_id = get_user_id_from_token(token_payload)
     query = db.query(models.Evaluation).order_by(models.Evaluation.created_at.desc())
-    # In multi-user mode, filter by user; admin sees all
-    if user_id is not None and token_payload.get("sub") != "admin":
-        query = query.filter(models.Evaluation.user_id == user_id)
     evals = query.all()
 
     history = []
@@ -813,7 +745,9 @@ def api_retry_from_stage(
     new_model = body.get("model") or original_job.model_used or os.environ.get("DEFAULT_MODEL", "gemini-2.5-flash-lite")
     overrides = body.get("overrides", {})
     webhook_url = body.get("webhook_url", "")
-    user_id = get_user_id_from_token(token_payload)
+    deep_research_enabled = body.get("deep_research_enabled", False)
+    deep_research_model = body.get("deep_research_model", os.environ.get("DEFAULT_DEEP_RESEARCH_MODEL", "deep-research-pro-preview-12-2025"))
+
 
     # Extract intermediate results from original job to pass as precomputed
     intermediate = {}
@@ -830,11 +764,6 @@ def api_retry_from_stage(
     precomputed_s3: str = str(_s3.get("report", "")) if from_stage > 3 else ""
 
     docs = db.query(models.MandateDocument).order_by(models.MandateDocument.created_at.asc()).all()
-
-    class _DocProto:
-        def __init__(self, f, m, d):
-            self.filename = f; self.mime_type = m; self.file_data = d
-
     mandate_docs = [_DocProto(d.filename, d.mime_type, d.file_data) for d in docs]
 
     new_job_id = str(uuid.uuid4())
@@ -843,7 +772,6 @@ def api_retry_from_stage(
         status="running",
         idea=original_job.idea,
         model_used=new_model,
-        user_id=user_id,
         webhook_url=webhook_url or None,
     )
     db.add(new_job)
@@ -869,6 +797,8 @@ def api_retry_from_stage(
                 precomputed_stage1=precomputed_s1,
                 precomputed_stage2=precomputed_s2,
                 precomputed_stage3=precomputed_s3,
+                deep_research_enabled=deep_research_enabled,
+                deep_research_model=deep_research_model,
             )
             if not result or not isinstance(result, dict):
                 raise ValueError("Pipeline returned empty or invalid response.")
@@ -881,7 +811,6 @@ def api_retry_from_stage(
                     recommendation=result.get("Recommendation", "N/A"),
                     full_json=json.dumps(result),
                     model_used=new_model,
-                    user_id=user_id,
                 )
                 s.add(db_eval)
                 s.commit()
@@ -893,6 +822,12 @@ def api_retry_from_stage(
 
             if webhook_url:
                 _fire_webhook(webhook_url, {"job_id": new_job_id, "status": "done", "result": result})
+
+        except InterruptedError as exc:
+            app_log.info("Stage retry cancelled: job=%s", new_job_id)
+            _update_job(new_job_id, status="cancelled", error_msg=str(exc))
+            if webhook_url:
+                _fire_webhook(webhook_url, {"job_id": new_job_id, "status": "cancelled"})
 
         except Exception as exc:
             app_log.error("Stage retry error: job=%s err=%s\n%s", new_job_id, exc, traceback.format_exc())

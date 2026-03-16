@@ -1035,52 +1035,6 @@ export function VisualOutputDashboard({ data }: { data: EvaluationResult }) {
                 </div>
             )}
 
-{/* Key Highlights */}
-{data.Key_Highlights && data.Key_Highlights.length > 0 && (
-    <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-6 border border-primary/20 dark:border-primary/20">
-        <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 text-lg mb-4 flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-primary" /> Key Highlights
-        </h3>
-        <ul className="list-disc list-inside space-y-2 text-zinc-700 dark:text-zinc-300">
-            {data.Key_Highlights.map((highlight, index) => (
-                <li key={index} className="leading-relaxed">{highlight}</li>
-            ))}
-        </ul>
-    </div>
-)}
-
-{/* Risks & Mitigations */}
-{data.Risks_Mitigations && data.Risks_Mitigations.length > 0 && (
-    <div className="bg-red-50/60 dark:bg-red-950/20 rounded-2xl p-6 border border-red-100 dark:border-red-900/30">
-        <h3 className="font-semibold text-red-900 dark:text-red-400 text-lg mb-4 flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" /> Risks & Mitigations
-        </h3>
-        <div className="space-y-4">
-            {data.Risks_Mitigations.map((item, index) => (
-                <div key={index} className="border-b border-red-100 dark:border-red-900/30 pb-4 last:border-b-0 last:pb-0">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="font-semibold text-red-800 dark:text-red-300">{item.Risk}</span>
-                        <Badge label="Severity" value={item.Severity} severity />
-                    </div>
-                    <p className="text-sm text-red-700/90 dark:text-red-300/90 leading-relaxed">
-                        <span className="font-medium">Mitigation:</span> {item.Mitigation}
-                    </p>
-                </div>
-            ))}
-        </div>
-    </div>
-)}
-
-{/* Strategic Alignment */}
-{data.Strategic_Alignment && (
-    <div className="bg-blue-50/60 dark:bg-blue-950/20 rounded-2xl p-6 border border-blue-100 dark:border-blue-900/30">
-        <h3 className="font-semibold text-blue-900 dark:text-blue-400 text-lg mb-4 flex items-center gap-2">
-            <Target className="h-5 w-5" /> Strategic Alignment
-        </h3>
-        <p className="text-blue-800/90 dark:text-blue-300/90 leading-relaxed">{data.Strategic_Alignment}</p>
-    </div>
-)}
-
 {/* ── Full Financial Model ─────────────────────────────────── */}
 {data.Financial_Simulation && (
     <div className="space-y-6 pt-2">

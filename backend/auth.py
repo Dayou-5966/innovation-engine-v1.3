@@ -22,8 +22,6 @@ if not JWT_SECRET or JWT_SECRET == _DEFAULT_JWT_SECRET:
 # ADMIN_HASH is the bcrypt hash of the actual gateway password stored in .env
 ADMIN_HASH = os.environ.get("ADMIN_HASH", "").strip()
 ALGORITHM = "HS256"
-MULTI_USER_MODE = os.environ.get("MULTI_USER_MODE", "false").lower() == "true"
-
 security = HTTPBearer()
 
 
@@ -39,24 +37,9 @@ def verify_password(plain_password: str) -> bool:
         return False
 
 
-def verify_user_password(plain_password: str, stored_hash: str) -> bool:
-    """Verifies a plaintext password against a per-user bcrypt hash."""
-    try:
-        return bcrypt.checkpw(plain_password.encode("utf-8"), stored_hash.encode("utf-8"))
-    except Exception:
-        return False
-
-
-def hash_password(plain_password: str) -> str:
-    """Hash a plaintext password with bcrypt."""
-    return bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
-
-def create_access_token(username: str = "admin", user_id: typing.Optional[int] = None) -> str:
+def create_access_token(username: str = "admin") -> str:
     expire = datetime.now(timezone.utc) + timedelta(hours=24)
     payload: dict = {"sub": username, "exp": expire}
-    if user_id is not None:
-        payload["uid"] = user_id
     encoded_jwt = jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -68,14 +51,8 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
         sub = payload.get("sub")
         if not sub:
             raise HTTPException(status_code=401, detail="Invalid token payload")
-        # Legacy tokens only have sub="admin"; multi-user tokens also carry uid
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
-
-
-def get_user_id_from_token(payload: dict) -> typing.Optional[int]:
-    """Extract user_id from token payload. Returns None for legacy admin tokens."""
-    return payload.get("uid")

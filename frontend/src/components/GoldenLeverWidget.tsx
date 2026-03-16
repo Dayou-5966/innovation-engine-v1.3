@@ -28,7 +28,7 @@ export default function GoldenLeverWidget({ goldenLever }: GoldenLeverProps) {
       <div className="mt-8 flex items-start gap-3 rounded-xl bg-slate-50 dark:bg-zinc-800/50 p-4 border border-slate-100 dark:border-zinc-700/50">
         <ShieldCheck className="h-5 w-5 text-slate-400 dark:text-zinc-500 mt-0.5 flex-shrink-0" />
         <p className="text-[11px] leading-relaxed text-slate-600 dark:text-zinc-400 italic">
-          This variable determines **70%+ of the project's volatility**. Management focus 
+          This variable determines <strong>70%+ of the project&apos;s volatility</strong>. Management focus 
           should be prioritized on stabilizing this metric above all server-level technicalities.
         </p>
       </div>

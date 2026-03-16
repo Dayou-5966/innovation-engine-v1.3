@@ -1,15 +1,23 @@
 import os
 import json
+import re
+import time as _time
+import typing
+import hashlib
+import itertools
+import tempfile
+import traceback
+
 import numpy as np
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-
 def monte_carlo_simulation(base_value: float, iterations: int, volatility_scale: float, risk_threshold: float) -> str:
     """Runs a Monte Carlo simulation for financial risk analysis."""
-    returns = np.random.normal(loc=1.05, scale=float(volatility_scale), size=(int(iterations), 5))
+    bounded_iters = max(1000, min(100000, int(iterations)))
+    returns = np.random.normal(loc=1.05, scale=float(volatility_scale), size=(bounded_iters, 5))
     portfolio = float(base_value) * np.cumprod(returns, axis=1)  # type: ignore
     final_values = portfolio[:, -1]  # type: ignore
     var_95 = np.percentile(final_values, 5)
@@ -31,17 +39,13 @@ def monte_carlo_simulation(base_value: float, iterations: int, volatility_scale:
     })
 
 
-import typing
-
 def _call(client, model: str, prompt: typing.Any, temperature: float = 0.3, tools=None,
           max_retries: int = 5, retry_delay: float = 6.0, progress_callback=None, response_mime_type: str = None) -> str:
     """Blocking generate_content call using direct HTTP requests to bypass Python 3.9 httpx deadlocks."""
-    import time as _time
-    import os
-    import requests
 
     api_key = os.environ.get("GEMINI_API_KEY", "")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
 
     parts = []
     if isinstance(prompt, list):
@@ -82,7 +86,7 @@ def _call(client, model: str, prompt: typing.Any, temperature: float = 0.3, tool
     last_exc: Exception = RuntimeError("_call: no attempts made")
     for attempt in range(1, max_retries + 1):
         try:
-            resp = requests.post(url, json=payload, timeout=timeout)
+            resp = requests.post(url, headers=headers, json=payload, timeout=timeout)
             if not resp.ok:
                 raise ValueError(f"HTTP {resp.status_code}: {resp.text[:500]}")
             
@@ -119,10 +123,8 @@ def _call(client, model: str, prompt: typing.Any, temperature: float = 0.3, tool
                         
                 # Only emit if actual web search was performed
                 if web_retrieval or urls:
-                    import itertools
-                    from typing import List
-                    safe_queries: List[str] = [str(q) for q in web_retrieval]
-                    safe_urls: List[str] = list(str(u) for u in dict.fromkeys(urls))
+                    safe_queries: list = [str(q) for q in web_retrieval]
+                    safe_urls: list = list(str(u) for u in dict.fromkeys(urls))
                     
                     trace_payload = {
                         "queries": safe_queries,
@@ -163,14 +165,35 @@ def _run_deep_research(api_key: str, topic: str, model: str, progress_callback=N
         print(f"[Engine] {stage_name}: Dispatching {model}...")
 
     try:
+        # ── Check cache before making an API call ──
+        _backend_dir = os.path.dirname(os.path.abspath(__file__))
+        _cache_dir = os.path.join(_backend_dir, "data", "research_cache")
+        _TTL_SECS = 7 * 24 * 3600
+        h = hashlib.sha256(topic.encode()).hexdigest()
+        _cache_path = os.path.join(_cache_dir, f"{h}.json")
+        if os.path.exists(_cache_path):
+            age = _time.time() - os.path.getmtime(_cache_path)
+            if age < _TTL_SECS:
+                with open(_cache_path, "r") as _cf:
+                    cached = json.load(_cf)
+                cached_text = cached.get("result", "")
+                if cached_text:
+                    print(f"[Engine] {stage_name}: Cache HIT ({age/3600:.1f}h old, {len(cached_text)} chars)")
+                    if progress_callback:
+                        progress_callback("progress", end_prog)
+                    return cached_text
+            else:
+                try:
+                    os.remove(_cache_path)  # Expire stale (TOCTOU-safe)
+                except FileNotFoundError:
+                    pass
+                print(f"[Engine] {stage_name}: Cache expired ({age/3600:.1f}h old), re-fetching.")
+
         if "deep-research-pro" in model:
             # --- TRUE DEEP RESEARCH INTERACTIONS API FLOW ---
-            import requests, json
-            import time as _time
-            
             print(f"[Engine] {stage_name}: Creating interaction via REST API...")
-            headers = {"Content-Type": "application/json"}
-            url = f"https://generativelanguage.googleapis.com/v1alpha/interactions?key={api_key}"
+            headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
+            url = f"https://generativelanguage.googleapis.com/v1alpha/interactions"
             payload = {
                 "agent": model,
                 "input": topic,
@@ -188,7 +211,7 @@ def _run_deep_research(api_key: str, topic: str, model: str, progress_callback=N
             poll_interval = 10
             max_polls = 180 # 30 mins
             for attempt in range(max_polls):
-                poll_url = f"https://generativelanguage.googleapis.com/v1alpha/interactions/{interaction_id}?key={api_key}"
+                poll_url = f"https://generativelanguage.googleapis.com/v1alpha/interactions/{interaction_id}"
                 poll_res = requests.get(poll_url, headers=headers, timeout=60)
                 poll_res.raise_for_status()
                 state = poll_res.json()
@@ -224,20 +247,27 @@ def _run_deep_research(api_key: str, topic: str, model: str, progress_callback=N
 
                     # Cache persistence for background runs
                     try:
-                        import hashlib, os as _os, time as _ct
-                        # Anchor cache to backend directory so it is CWD-independent
-                        _backend_dir = _os.path.dirname(_os.path.abspath(__file__))
-                        _cache_dir = _os.path.join(_backend_dir, "data", "research_cache")
-                        _os.makedirs(_cache_dir, exist_ok=True)
+                        # Anchor cache dir to backend directory so it is CWD-independent
+                        _backend_dir = os.path.dirname(os.path.abspath(__file__))
+                        _cache_dir = os.path.join(_backend_dir, "data", "research_cache")
+                        os.makedirs(_cache_dir, exist_ok=True)
                         # Use SHA-256 to avoid MD5 collision risk
                         h = hashlib.sha256(topic.encode()).hexdigest()
-                        _cache_path = _os.path.join(_cache_dir, f"{h}.json")
+                        _cache_path = os.path.join(_cache_dir, f"{h}.json")
                         # Check TTL: 7 days
                         _TTL_SECS = 7 * 24 * 3600
-                        if _os.path.exists(_cache_path) and (_ct.time() - _os.path.getmtime(_cache_path)) > _TTL_SECS:
-                            _os.remove(_cache_path)  # Expire stale entry
-                        with open(_cache_path, "w") as f:
-                            json.dump({"topic": topic, "result": final_text, "cached_at": _ct.time()}, f)
+                        if os.path.exists(_cache_path) and (_time.time() - os.path.getmtime(_cache_path)) > _TTL_SECS:
+                            try:
+                                os.remove(_cache_path)  # Expire stale entry
+                            except FileNotFoundError:
+                                pass
+                        
+                        # Atomic write to avoid concurrent corruption
+                        tmp_fd, tmp_path = tempfile.mkstemp(dir=_cache_dir, suffix=".tmp")
+                        with os.fdopen(tmp_fd, "w") as f:
+                            json.dump({"topic": topic, "result": final_text, "cached_at": _time.time()}, f)
+                        os.replace(tmp_path, _cache_path)
+
                     except Exception as ce:
                         print(f"[Engine] Cache write failed: {ce}")
 
@@ -258,7 +288,6 @@ def _run_deep_research(api_key: str, topic: str, model: str, progress_callback=N
         return f"(Deep Research encountered an error: {e})"
 
 
-import typing
 
 def evaluate_idea(
     idea: str,
@@ -297,10 +326,8 @@ def evaluate_idea(
     check_cancelled = _chk
 
     PRO   = model_name
-    FLASH = model_name
+    FLASH = os.environ.get("FLASH_MODEL", "gemini-2.5-flash")
 
-    uploaded_files = []
-    temp_files = []
     logic_trace = []
 
     try:
@@ -312,22 +339,15 @@ def evaluate_idea(
         # ─────────────────────────────────────────────────────────────────────
         # STAGE 1 — STRATEGIST  (AI Engine: {PRO})
         # ─────────────────────────────────────────────────────────────────────
-        mandate_contents = []
         if mandate_docs:
-            import tempfile
-            import time
             doc_block_parts = []
             for d in mandate_docs:
-                # For PDFs in _call() mode: extract text instead of using File API
-                if getattr(d, "mime_type", "text/plain") == "application/pdf":
-                    try:
-                        text_content = d.file_data.decode("utf-8", errors="replace")[:8000]
-                    except Exception:
-                        text_content = "(PDF binary — could not extract text)"
-                    doc_block_parts.append(f"[Document: {d.filename}]\n{text_content}")
-                else:
+                # Decode all documents as UTF-8 text (PDFs stored as extracted text)
+                try:
                     text_content = d.file_data.decode("utf-8", errors="replace")[:8000]
-                    doc_block_parts.append(f"[Document: {d.filename}]\n{text_content}")
+                except Exception:
+                    text_content = "(Binary document — could not extract text)"
+                doc_block_parts.append(f"[Document: {d.filename}]\n{text_content}")
             
             if doc_block_parts:
                 doc_block = "\n\n".join(doc_block_parts)
@@ -425,7 +445,6 @@ Output your full Strategic Brief as plain text (no JSON, no markdown headers).
             progress_callback("progress", 50)
             full_prompt = stage1_prompt
             try:
-                import requests
                 stage1_brief = _call(None, PRO, full_prompt, temperature=0.2, tools=search_tool, progress_callback=progress_callback)
             except (requests.exceptions.RequestException, ValueError, TimeoutError) as api_err:
                 print(f"[Engine] Stage 1 AI Engine failure: {api_err}")
@@ -481,9 +500,13 @@ C. STRATEGIC SIGNPOSTS (3-5 items): Future milestones that would confirm or kill
             progress_callback("status", "stage1_75")
             progress_callback("progress", 0)
             stage1_75_signals = _call(None, FLASH, stage1_75_prompt, temperature=0.2, tools=search_tool)
+            logic_trace.append("Signal Scraper captured external web signals.")
+            progress_callback("logic_trace", logic_trace)
         except Exception as e:
             print(f"[Engine] Stage 1.75 Scraper failed: {e}")
             stage1_75_signals = "[Scraper failed to run]"
+            logic_trace.append(f"Signal Scraper failed: {e}")
+            progress_callback("logic_trace", logic_trace)
         
         progress_callback("stage1_75", {"signals": stage1_75_signals, "model": FLASH})
         progress_callback("progress", 25)
@@ -531,17 +554,17 @@ DO NOT include markdown formatting like ```json. Output raw JSON ONLY.
 """
             try:
                 interrogator_raw = _call(None, FLASH, interrogator_prompt, temperature=0.2)
-                
-                # Clean up markdown fences if present
+
+                # Robust JSON extraction — handles preamble text and markdown fences
                 clean_json = interrogator_raw.strip()
-                if clean_json.startswith("```json"):
-                    clean_json = clean_json[7:]
-                if clean_json.startswith("```"):
-                    clean_json = clean_json[3:]
-                if clean_json.endswith("```"):
-                    clean_json = clean_json[:-3]
-                    
-                import json
+                _fence_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", clean_json, re.DOTALL)
+                if _fence_match:
+                    clean_json = _fence_match.group(1).strip()
+                else:
+                    _brace_match = re.search(r"\{.*\}", clean_json, re.DOTALL)
+                    if _brace_match:
+                        clean_json = _brace_match.group(0).strip()
+
                 directives = json.loads(clean_json.strip())
                 scout_directive = directives.get("scout_directive", scout_directive)
                 researcher_directive = directives.get("researcher_directive", researcher_directive)
@@ -684,12 +707,11 @@ Output the final two chapters in markdown formatting.
             loop3_res = _call(None, PRO, loop3_prompt, temperature=0.2, tools=search_tool)
 
             # ── Extract IP White Space coordinates from Loop 3 output ──
-            import re as _re
             ip_white_space_data = None
             try:
-                ws_match = _re.search(
+                ws_match = re.search(
                     r'"white_space_coordinates"\s*:\s*(\[.*?\])',
-                    loop3_res, _re.DOTALL
+                    loop3_res, re.DOTALL
                 )
                 if ws_match:
                     ip_white_space_data = json.loads(ws_match.group(1))
@@ -742,22 +764,6 @@ Output the final two chapters in markdown formatting.
                 logic_trace.append("Analyst successfully cross-referenced structural data with live scout signals.")
             progress_callback("logic_trace", logic_trace)
             
-            # Extract White Space Map Coordinates
-            ip_white_space_data = None
-            try:
-                import re
-                match = re.search(r'```json\s*({.*?"white_space_coordinates".*?})\s*```', stage2_report, re.DOTALL)
-                if match:
-                    white_space_json = json.loads(match.group(1))
-                    ip_white_space_data = white_space_json.get("white_space_coordinates")
-                    logic_trace.append(f"IP Specialist identified {len(ip_white_space_data)} generative white space domains.")
-                    # Strip the JSON from the markdown report so it doesn't render ugly in the UI tab
-                    stage2_report = stage2_report.replace(match.group(0), "")
-                else: logic_trace.append("IP Specialist did not return strict JSON white space map.")
-            except Exception as e:
-                logic_trace.append(f"Failed to parse White Space mapping: {e}")
-            if progress_callback: progress_callback("logic_trace", logic_trace)
-            
         # --- PROACTIVE UPGRADE: STAGE 2.5 RE-INTERROGATION ---
         # Detect "Black Swan" events via severity tags or conflict blocks
         is_crisis = "[Live Conflict Detected]" in stage2_report and "CRITICAL" in stage2_report.upper()
@@ -768,9 +774,10 @@ Output the final two chapters in markdown formatting.
                 progress_callback("logic_trace", logic_trace)
             
             # Generate a Pivot Directive based on the failure data
+            _s2_pivot_safe = stage2_report[:2000].replace("{", "{{").replace("}", "}}")
             pivot_prompt = f"""You are the Lead Market Intelligence Manager.
 Stage 2 discovered a CRITICAL conflict that invalidates our initial assumptions.
-CONFLICT DATA: {stage2_report[:2000]}
+CONFLICT DATA: {_s2_pivot_safe}
 
 TASK: Generate a 'Pivot Directive' for the final synthesis. 
 What specific new question must the Synthesizer answer to see if the idea can be salvaged?
@@ -818,48 +825,61 @@ What specific new question must the Synthesizer answer to see if the idea can be
             ]
         }
 
-        # ── Stage 3 pre-pass: Google Search for live cost/benchmark data ─────
-        if progress_callback:
-            progress_callback("progress", 20)
-            
-        print("[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...")
-        dr3_topic = (
-            f"Find specific, numerical financial benchmarks for: '{idea}'. "
-            f"Provide exact CAPEX costs, average OPEX salaries, current unit/commodity prices, "
-            f"and recent funding valuations in this sector. Cite sources."
-        )
-        if deep_research_enabled:
-            try:
-                benchmark_data = _run_deep_research(api_key, dr3_topic, deep_research_model, progress_callback, "Stage 3", 20, 40)
-                print(f"[Engine] Stage 3 benchmarks retrieved by Deep Research.")
-            except Exception as _be:
-                print(f"[Engine] Stage 3 benchmark search failed: {_be} — using Stage 2 data")
-                benchmark_data = "(Web search unavailable — use best-estimate figures from Stage 2 report)"
-        else:
-            if progress_callback:
-                progress_callback("progress", 40)
-            print("[Engine] Stage 3: Deep Research disabled by user.")
-            benchmark_data = "(Deep Research explicitly disabled by user. Please provide best estimates based on Stage 2 data or standard search.)"
+        if _skip_stage3:
+            print("[Engine] Stage 3: SKIPPED (using precomputed output)")
+            stage3_report = precomputed_stage3
+            progress_callback("progress", 100)
+            progress_callback("stage3", {"report": stage3_report, "monte_carlo": monte_carlo_result, "model": FLASH, "skipped": True})
 
-        stage3_prompt_text = f"""You are a Chief Financial Analyst, Statistical Quant, and Risk Specialist.
+        if not _skip_stage3:
+            # ── Stage 3 pre-pass: Google Search for live cost/benchmark data ─────
+            if progress_callback:
+                progress_callback("progress", 20)
+
+            print("[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...")
+            dr3_topic = (
+                f"Find specific, numerical financial benchmarks for: '{idea}'. "
+                f"Provide exact CAPEX costs, average OPEX salaries, current unit/commodity prices, "
+                f"and recent funding valuations in this sector. Cite sources."
+            )
+            if deep_research_enabled:
+                try:
+                    benchmark_data = _run_deep_research(api_key, dr3_topic, deep_research_model, progress_callback, "Stage 3", 20, 40)
+                    print(f"[Engine] Stage 3 benchmarks retrieved by Deep Research.")
+                except Exception as _be:
+                    print(f"[Engine] Stage 3 benchmark search failed: {_be} — using Stage 2 data")
+                    benchmark_data = "(Web search unavailable — use best-estimate figures from Stage 2 report)"
+            else:
+                if progress_callback:
+                    progress_callback("progress", 40)
+                print("[Engine] Stage 3: Deep Research disabled by user.")
+                benchmark_data = "(Deep Research explicitly disabled by user. Please provide best estimates based on Stage 2 data or standard search.)"
+
+        if not _skip_stage3:
+          # Escape curly braces in LLM outputs to prevent f-string KeyError
+          _s1_75_safe = stage1_75_signals.replace("{", "{{").replace("}", "}}")
+          _bench_safe = benchmark_data.replace("{", "{{").replace("}", "}}")
+          _s2_safe_s3 = stage2_report[:20000].replace("{", "{{").replace("}", "}}")
+          _s1_safe_s3 = stage1_brief[:8000].replace("{", "{{").replace("}", "}}")
+          stage3_prompt_text = f"""You are a Chief Financial Analyst, Statistical Quant, and Risk Specialist.
 You have received the following context:
 
 === STRATEGIC BRIEF (Stage 1) ===
-{stage1_brief[:8000]}
+{_s1_safe_s3}
 === END ===
 
 === MARKET & IP REPORT (Stage 2) ===
-{stage2_report[:20000]}
+{_s2_safe_s3}
 === END ===
 
 === LIVE FINANCIAL SIGNALS (Stage 1.75) ===
-{stage1_75_signals}
+{_s1_75_safe}
 === END SIGNALS ===
 
 IDEA: \"{idea}\"
 
 === REAL-WORLD FINANCIAL BENCHMARKS (live web search — {len(benchmark_data)} chars) ===
-{benchmark_data[:12000]}
+{_bench_safe}
 
 === END BENCHMARKS ===
 
@@ -1030,127 +1050,128 @@ You must strictly organize your final Risk Intelligence Report into the followin
 
 Output your full Financial Model + Risk Report as plain text (no JSON).
 """
-        if overrides.get("stage3"):
-            stage3_prompt_text += f"\n\n=== USER OVERRIDE DIRECTIVE ===\nThe user has provided the following explicit instructions for your financial model and risk assessment. You MUST prioritize this directive over standard rules if they conflict:\n{overrides['stage3']}\n===============================\n"
+          if overrides.get("stage3"):
+              stage3_prompt_text += f"\n\n=== USER OVERRIDE DIRECTIVE ===\nThe user has provided the following explicit instructions for your financial model and risk assessment. You MUST prioritize this directive over standard rules if they conflict:\n{overrides['stage3']}\n===============================\n"
 
-        stage3_contents = [
-            {"role": "user", "parts": [{"text": stage3_prompt_text}]}
-        ]
+          stage3_contents = [
+              {"role": "user", "parts": [{"text": stage3_prompt_text}]}
+          ]
 
-        print("[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...")
-        if progress_callback:
-            progress_callback("status", "stage3")
-            progress_callback("progress", 45)
-            
-        stage3_url = f"https://generativelanguage.googleapis.com/v1beta/models/{FLASH}:generateContent?key={api_key}"
-        
-        resp3a_data = None
-        for s3_init_attempt in range(1, 4):
-            try:
-                import time as _t
-                payload3a = {
-                    "contents": stage3_contents,
-                    "tools": [tool_schema],
-                    "generationConfig": {"temperature": 0.2}
-                }
-                r = requests.post(stage3_url, json=payload3a, timeout=120)
-                if not r.ok:
-                    raise ValueError(f"HTTP {r.status_code}: {r.text[:500]}")
-                resp3a_data = r.json()
-                if resp3a_data.get("candidates"):
-                    break
-                raise ValueError("Stage 3 initial call returned no candidates")
-            except Exception as e3:
-                print(f"[Engine] Stage 3 init attempt {s3_init_attempt}/3 failed: {e3}")
-                if s3_init_attempt < 3:
-                    _t.sleep(6 * s3_init_attempt)
-                else:
-                    raise
+          print("[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...")
+        if not _skip_stage3:
+          if progress_callback:
+              progress_callback("status", "stage3")
+              progress_callback("progress", 45)
 
-        # Execute Monte Carlo tool call if requested
-        if progress_callback:
-            progress_callback("progress", 70)
-            
-        ai_message = resp3a_data["candidates"][0].get("content", {})
-        ai_parts = ai_message.get("parts", [])
-        
-        function_call = None
-        for p in ai_parts:
-            if "functionCall" in p:
-                function_call = p["functionCall"]
-                break
+          stage3_url = f"https://generativelanguage.googleapis.com/v1beta/models/{FLASH}:generateContent"
+          stage3_headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
 
-        monte_carlo_result = "{}"
-        volatility_scale = 0.15
+          resp3a_data = None
+          for s3_init_attempt in range(1, 4):
+              try:
+                  payload3a = {
+                      "contents": stage3_contents,
+                      "tools": [tool_schema],
+                      "generationConfig": {"temperature": 0.2}
+                  }
+                  r = requests.post(stage3_url, headers=stage3_headers, json=payload3a, timeout=120)
+                  if not r.ok:
+                      raise ValueError(f"HTTP {r.status_code}: {r.text[:500]}")
+                  resp3a_data = r.json()
+                  if resp3a_data.get("candidates"):
+                      break
+                  raise ValueError("Stage 3 initial call returned no candidates")
+              except Exception as e3:
+                  print(f"[Engine] Stage 3 init attempt {s3_init_attempt}/3 failed: {e3}")
+                  if s3_init_attempt < 3:
+                      _time.sleep(6 * s3_init_attempt)
+                  else:
+                      raise
 
-        if function_call:
-            stage3_contents.append(ai_message)
-            
-            fc_name = function_call.get("name")
-            args = function_call.get("args", {})
-            if fc_name == "monte_carlo_simulation_tool":
-                volatility_scale = float(args.get("volatility_scale"))
-                risk_threshold = float(args.get("risk_threshold"))
-                monte_carlo_result = monte_carlo_simulation(
-                    base_value=float(args.get("base_value", 5000000)),
-                    iterations=int(args.get("iterations", 10000)),
-                    volatility_scale=volatility_scale,
-                    risk_threshold=risk_threshold
-                )
-                print(f"[Engine] Monte Carlo result: {monte_carlo_result}")
-                logic_trace.append(f"Quant configured Monte Carlo with {volatility_scale} volatility and {risk_threshold} risk threshold based on mandate.")
-                if progress_callback:
-                    progress_callback("logic_trace", logic_trace)
-                
-            tool_response_part = {
-                "functionResponse": {
-                    "name": fc_name,
-                    "response": {"result": monte_carlo_result}
-                }
-            }
-            stage3_contents.append({"role": "tool", "parts": [tool_response_part]})
+          # Execute Monte Carlo tool call if requested
+          if progress_callback:
+              progress_callback("progress", 70)
 
-            # Retry Stage 3b synthesis call
-            if progress_callback:
-                progress_callback("progress", 85)
-                
-            stage3_report = ""
-            for s3_attempt in range(1, 4):
-                try:
-                    import time as _t
-                    payload3b = {
-                        "contents": stage3_contents,
-                        "generationConfig": {"temperature": 0.2}
-                    }
-                    r2 = requests.post(stage3_url, json=payload3b, timeout=120)
-                    if not r2.ok:
-                        raise ValueError(f"HTTP {r2.status_code}: {r2.text[:500]}")
-                    
-                    data3b = r2.json()
-                    resp_parts = data3b.get("candidates", [])[0].get("content", {}).get("parts", [])
-                    stage3_report = "".join([p.get("text", "") for p in resp_parts]).strip()
-                    
-                    if stage3_report:
-                        break
-                    raise ValueError("Stage 3b returned empty text")
-                except Exception as e3b:
-                    print(f"[Engine] Stage 3b attempt {s3_attempt}/3 failed: {e3b}")
-                    if s3_attempt < 3:
-                        _t.sleep(6 * s3_attempt)
-                    else:
-                        raise
-        else:
-            # No tool call — use direct Stage 3a output, with empty-response check
-            stage3_report = "".join([p.get("text", "") for p in ai_parts]).strip()
-            if not stage3_report:
-                raise ValueError("Stage 3a returned empty text and no tool call was made")
+          ai_message = resp3a_data["candidates"][0].get("content", {})
+          ai_parts = ai_message.get("parts", [])
 
-        if progress_callback:
-            progress_callback("progress", 100)
-            progress_callback("stage3", {"report": stage3_report, "monte_carlo": monte_carlo_result, "model": FLASH})
-            
-            logic_trace.append(f"Quant Specialist executed Monte Carlo with {volatility_scale} scale based on technical risk.")
-            progress_callback("logic_trace", logic_trace)
+          function_call = None
+          for p in ai_parts:
+              if "functionCall" in p:
+                  function_call = p["functionCall"]
+                  break
+
+          monte_carlo_result = "{}"
+          volatility_scale = 0.15
+
+          if function_call:
+              stage3_contents.append(ai_message)
+
+              fc_name = function_call.get("name")
+              args = function_call.get("args", {})
+              if fc_name == "monte_carlo_simulation_tool":
+                  volatility_scale = float(args.get("volatility_scale", 0.25))
+                  risk_threshold = float(args.get("risk_threshold", 0.80))
+                  monte_carlo_result = monte_carlo_simulation(
+                      base_value=float(args.get("base_value", 5000000)),
+                      iterations=int(args.get("iterations", 10000)),
+                      volatility_scale=volatility_scale,
+                      risk_threshold=risk_threshold
+                  )
+                  print(f"[Engine] Monte Carlo result: {monte_carlo_result}")
+                  logic_trace.append(f"Quant configured Monte Carlo with {volatility_scale} volatility and {risk_threshold} risk threshold based on mandate.")
+                  if progress_callback:
+                      progress_callback("logic_trace", logic_trace)
+
+              tool_response_part = {
+                  "functionResponse": {
+                      "name": fc_name,
+                      "response": {"result": monte_carlo_result}
+                  }
+              }
+              stage3_contents.append({"role": "user", "parts": [tool_response_part]})
+
+              # Retry Stage 3b synthesis call
+              if progress_callback:
+                  progress_callback("progress", 85)
+
+              stage3_report = ""
+              for s3_attempt in range(1, 4):
+                  try:
+                      payload3b = {
+                          "contents": stage3_contents,
+                          "generationConfig": {"temperature": 0.2}
+                      }
+                      r2 = requests.post(stage3_url, headers=stage3_headers, json=payload3b, timeout=120)
+                      if not r2.ok:
+                          raise ValueError(f"HTTP {r2.status_code}: {r2.text[:500]}")
+
+                      data3b = r2.json()
+                      resp_parts = data3b.get("candidates", [])[0].get("content", {}).get("parts", [])
+                      stage3_report = "".join([p.get("text", "") for p in resp_parts]).strip()
+
+                      if stage3_report:
+                          break
+                      raise ValueError("Stage 3b returned empty text")
+                  except Exception as e3b:
+                      print(f"[Engine] Stage 3b attempt {s3_attempt}/3 failed: {e3b}")
+                      if s3_attempt < 3:
+                          _time.sleep(6 * s3_attempt)
+                      else:
+                          raise
+          else:
+              # No tool call — use direct Stage 3a output, with empty-response check
+              stage3_report = "".join([p.get("text", "") for p in ai_parts]).strip()
+              if not stage3_report:
+                  raise ValueError("Stage 3a returned empty text and no tool call was made")
+
+          if progress_callback:
+              progress_callback("progress", 100)
+              progress_callback("stage3", {"report": stage3_report, "monte_carlo": monte_carlo_result, "model": FLASH})
+
+          logic_trace.append(f"Quant Specialist executed Monte Carlo with {volatility_scale} scale based on technical risk.")
+          if progress_callback:
+              progress_callback("logic_trace", logic_trace)
             
         if check_cancelled and check_cancelled():
             raise InterruptedError("Evaluation cancelled by user after Stage 3")
@@ -1328,7 +1349,6 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
         # --- STAGE 4: PROACTIVE SYNTHESIS ---
         print("[Engine] Stage 4: Compiling final report with Pivot Intelligence...")
 
-        import re
         lever_match = re.search(r"\*\s*\*\*Primary Lever\*\*:?\s*(.*?)\n", stage3_report, re.IGNORECASE)
         if not lever_match:
             lever_match = re.search(r"Primary Lever[:\s]+(.*?)\n", stage3_report, re.IGNORECASE)
@@ -1338,23 +1358,28 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
         if progress_callback:
             progress_callback("logic_trace", logic_trace)
 
+        _safe_s1 = stage1_brief.replace('{', '{{').replace('}', '}}')
+        _safe_s2 = stage2_report.replace('{', '{{').replace('}', '}}')
+        _safe_s3 = stage3_report.replace('{', '{{').replace('}', '}}')
+        _safe_s175 = stage1_75_signals.replace('{', '{{').replace('}', '}}')
+
         stage4_prompt = f"""You are the Chief Innovation Officer compiling a final Investment Evaluation Report.
 You have received deep-dive analysis from 4 specialist teams:
 
 === STAGE 1: STRATEGIC BRIEF ===
-{stage1_brief}
+{_safe_s1}
 === END ===
 
 === STAGE 2: MARKET & IP INTELLIGENCE REPORT ===
-{stage2_report}
+{_safe_s2}
 === END ===
 
 === STAGE 3: RISK INTELLIGENCE REPORT ===
-{stage3_report}
+{_safe_s3}
 === END ===
 
 === STAGE 1.75: SIGNAL SCRAPER REPORT ===
-{stage1_75_signals}
+{_safe_s175}
 === END ===
 
 IDEA: "{idea}"
@@ -1406,18 +1431,17 @@ As the final synthesizer, you are the LAST line of defense for data quality.
         search_tool_for_s4 = search_tool if "gemini-3" not in FLASH else None
         output_str = _call(None, FLASH, full_prompt4, temperature=0.35, tools=search_tool_for_s4)
 
-        # Strip markdown fences if present
+        # Extract JSON block robustly to handle conversational preamble
         output_str = output_str.strip()
-        if output_str.startswith("```json"):
-            output_str = output_str[7:]
-        if output_str.startswith("```"):
-            output_str = output_str[3:]
-        if output_str.endswith("```"):
-            output_str = output_str[:-3]
-        output_str = output_str.strip()
+        json_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", output_str, re.DOTALL)
+        if json_match:
+            output_str = json_match.group(1).strip()
+        else:
+            # Fallback if no markdown fences are used
+            brace_match = re.search(r"\{.*\}", output_str, re.DOTALL)
+            if brace_match:
+                output_str = brace_match.group(0).strip()
 
-        import re
-        
         def clean_custom_escapes(raw_json: str) -> str:
             # 1. Temporarily replace valid escaped backslashes (\\) with a placeholder
             temp_json = raw_json.replace(r'\\', '__DOUBLE_SLASH__')
@@ -1460,9 +1484,10 @@ BROKEN STRING:
             except Exception as repair_err:
                 print(f"[Engine] JSON repair also failed: {repair_err}. Raising ValueError.")
                 if os.environ.get("DEBUG_JSON_DUMP"):
-                    with open("/tmp/bad_output_str1.json", "w") as f:
+                    ts = int(_time.time())
+                    with open(f"/tmp/bad_output_str1_{ts}.json", "w") as f:
                         f.write(output_str)
-                    with open("/tmp/bad_output_str2.json", "w") as f:
+                    with open(f"/tmp/bad_output_str2_{ts}.json", "w") as f:
                         f.write(locals().get("output_str2", ""))
                 raise ValueError(f"AI returned irrevocably malformed JSON. Initial error: {json_err}")
 
@@ -1520,7 +1545,14 @@ Return exactly this JSON schema. No markdown fences.
 """
             try:
                 stage5_resp = _call(None, FLASH, stage5_prompt, temperature=0.2, response_mime_type="application/json")
-                stage5_resp = stage5_resp.replace("```json", "").replace("```", "").strip()
+                stage5_resp = stage5_resp.strip()
+                s5_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", stage5_resp, re.DOTALL)
+                if s5_match:
+                    stage5_resp = s5_match.group(1).strip()
+                else:
+                    s5_brace = re.search(r"\{.*\}", stage5_resp, re.DOTALL)
+                    if s5_brace:
+                        stage5_resp = s5_brace.group(0).strip()
                 parsed["Tactical_Roadmap"] = json.loads(stage5_resp)
                 logic_trace.append("Stage 5 Execution Lead generated 90-Day Tactical Roadmap and Hiring Plan.")
                 if progress_callback: progress_callback("logic_trace", logic_trace)
@@ -1552,7 +1584,6 @@ Return exactly this JSON schema. No markdown fences.
         print(f"[Engine] Pipeline aborted due to AI Engine connection or validation failure: {ce}")
         raise ce
     except Exception as e:
-        import traceback
         print(f"[Engine] Pipeline unexpected error: {e}")
         print(traceback.format_exc())
         # Re-raise so main.py can surface a proper 500 error.

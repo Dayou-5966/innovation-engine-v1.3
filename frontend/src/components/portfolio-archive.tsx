@@ -18,6 +18,7 @@ import { jsPDF } from "jspdf";
 import { toJpeg } from "html-to-image";
 import { VisualOutputDashboard, EvaluationResult } from "./dashboard";
 import { PrintableReport } from "./printable-report";
+import { GEMINI_MODELS } from "./sidebar";
 
 /* ─────────────────────── Types ─────────────────────── */
 interface ScoreEntry { Score: number; Rationale: string; }
@@ -34,6 +35,7 @@ interface FullReport {
     Market_Verification?: Record<string, any>;
     IP_Scan?: Record<string, any>;
     Recommendation?: string; Justification?: string;
+    Deep_Research_Utilized?: boolean;
 }
 interface EvaluationRecord {
     id: number; idea: string; concept_title: string;
@@ -61,15 +63,11 @@ function saveSet(key: string, s: Set<number>) {
 
 /* ─────────────────────── Props ─────────────────────── */
 interface PortfolioArchiveProps {
-    onRerun?: (idea: string, model: string) => void;
+    onRerun?: (idea: string, model: string, result?: any) => void;
 }
 
 /* ─────────────────────── Re-run state ─────────────────────── */
-const AVAILABLE_MODELS = [
-    { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
-    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-    { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite" },
-];
+const AVAILABLE_MODELS = GEMINI_MODELS.map(m => ({ id: m.id, label: m.name.replace(/^[🔴🟡🟢🔎]\s*/, "") }));
 
 /* ─────────────────────── Component ─────────────────────── */
 export function PortfolioArchive({ onRerun }: PortfolioArchiveProps) {
@@ -264,10 +262,15 @@ export function PortfolioArchive({ onRerun }: PortfolioArchiveProps) {
         setRerunError(null);
         try {
             const token = localStorage.getItem("auth_token");
+            const payload = {
+                model,
+                deep_research_enabled: !!record.full_json?.Deep_Research_Utilized
+            };
+
             const res = await fetch(`/api/evaluations/${record.id}/rerun`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-                body: JSON.stringify({ model }),
+                body: JSON.stringify(payload),
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const { job_id } = await res.json();
@@ -282,7 +285,7 @@ export function PortfolioArchive({ onRerun }: PortfolioArchiveProps) {
                 if (st.status === "done") {
                     setRerunStatus("done");
                     fetchHistory(); // refresh archive with new entry
-                    if (onRerun && st.result) onRerun(record.idea, model);
+                    if (onRerun && st.result) onRerun(record.idea, model, st.result);
                 } else if (st.status === "error") {
                     setRerunStatus("error");
                     setRerunError(st.error ?? "Pipeline error");

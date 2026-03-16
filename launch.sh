@@ -1,5 +1,5 @@
 #!/bin/bash
-# ── The Innovation Engine — Launch Script ──────────────────────────────────
+# ── The Innovation Engine — Unified Launch Script ──────────────────────────────────
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 BACKEND="$ROOT/backend"
@@ -7,19 +7,27 @@ FRONTEND="$ROOT/frontend"
 NODE_BIN="$HOME/.nvm/versions/node/v20.20.0/bin"
 PYTHON="$BACKEND/venv/bin/python3"
 
-# Kill anything on ports 8000 and 3000 from a previous run
+echo "🧹  Cleaning up existing processes..."
+
+# Kill existing frontend/backend processes that might be running in the background or IDE tasks
+pkill -f "uvicorn main:app" 2>/dev/null
+pkill -f "next dev" 2>/dev/null
+
+# Aggressively kill anything hogging the ports (8000 and 3000)
 for port in 8000 3000; do
     pid=$(lsof -ti :$port 2>/dev/null)
     if [ -n "$pid" ]; then
-        echo "Stopping process on port $port (pid $pid)..."
+        echo "    Killing stale process on port $port (PID: $pid)..."
         echo "$pid" | xargs kill -9 2>/dev/null
     fi
 done
 
+echo "✅  Ports cleared. Starting fresh instances..."
+echo ""
+
 # Remove stale Next.js cache to prevent Turbopack corruption
 rm -rf "$FRONTEND/.next"
 
-echo ""
 echo "🚀  Starting The Innovation Engine..."
 echo "    Backend  → http://localhost:8000"
 echo "    Frontend → http://localhost:3000"
@@ -32,7 +40,7 @@ cd "$BACKEND"
     --port 8000 \
     --reload \
     --reload-exclude ".venv*" \
-    &> /tmp/ie_backend.log &
+    > /tmp/ie_backend.log 2>&1 &
 BACKEND_PID=$!
 
 # Wait for backend to be ready
@@ -47,7 +55,8 @@ done
 
 # Start frontend in background
 cd "$FRONTEND"
-PATH="$NODE_BIN:$PATH" npm run dev &> /tmp/ie_frontend.log &
+export PATH="$NODE_BIN:$PATH"
+npm run dev > /tmp/ie_frontend.log 2>&1 &
 FRONTEND_PID=$!
 
 echo "⏳  Waiting for frontend..."
@@ -65,7 +74,7 @@ open http://localhost:3000
 
 echo ""
 echo "📋  Logs: tail -f /tmp/ie_backend.log  |  tail -f /tmp/ie_frontend.log"
-echo "🛑  Press Ctrl+C to stop everything."
+echo "🛑  Press Ctrl+C here to stop everything gracefully."
 echo ""
 
 # Wait and clean up on Ctrl+C

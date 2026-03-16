@@ -31,7 +31,7 @@ The platform evolved rapidly through several critical versions, introducing stro
 - **Dual Financial Model**: A massive architectural upgrade to Stage 3 (Financial Simulation). Expanded the search to 10 distinct market categories and implemented a dual-phased model comparing **Pilot (Yr 1-2)** vs **Full-Scale (Yr 3-5+)** rollouts.
 - **Anti-Fabrication & Integrity Directives**: Implemented strict systemic directives demanding 2024-2026 recency, banning self-citations, and enforcing real external citations on CAPEX and OPEX estimates.
 - **HTTP/SDK Deadlock Resolutions**: Migrated intensive `gemini-2.5-pro` generation calls from the standard Google Generative AI SDK wrapper to raw HTTP `_call()` requests. This fundamentally resolved multi-threading/httpx deadlocks observed in Uvicorn background tasks.
-- **Multi-user & Templates**: Added multi-user authentication, rate limiting, and evaluation templates for broader organizational deployment.
+- **Multi-user & Templates**: Added multi-user authentication, rate limiting, and evaluation templates for broader organizational deployment. *(Note: Multi-user mode was deprecated in v1.3 due to IDOR security vulnerabilities; the platform now operates in single-admin mode.)*
 - **URL Hallucination Fixes**: Explicitly removed clickable signals and source endpoints to prevent the LLM from hallucinating broken placeholder URLs.
 
 ### Version 1.3: Deep Research Integration & Final Report Redesign

@@ -4,10 +4,7 @@ import time
 from dotenv import load_dotenv
 
 load_dotenv()
-os.environ["GEMINI_API_KEY"] = os.environ.get("GEMINI_API_KEY", "dummy_gemini_key")
 
-
-import os
 
 def generate_concepts(keywords: str, model_name: str = None) -> list:
     if model_name is None:
@@ -72,13 +69,15 @@ DO NOT include markdown formatting like ```json. Output raw JSON ONLY."""
             if not output_str:
                 raise ValueError("Model returned an empty response.")
 
-            # Strip markdown fences if present
-            if output_str.startswith("```json"):
-                output_str = output_str[7:]
-            if output_str.startswith("```"):
-                output_str = output_str[3:]
-            if output_str.endswith("```"):
-                output_str = output_str[:-3]
+            # Extract JSON robustly — handles preamble text from AI
+            import re as _re
+            _json_match = _re.search(r"```(?:json)?\s*(\[.*\])\s*```", output_str, _re.DOTALL)
+            if _json_match:
+                output_str = _json_match.group(1).strip()
+            else:
+                _bracket_match = _re.search(r"\[.*\]", output_str, _re.DOTALL)
+                if _bracket_match:
+                    output_str = _bracket_match.group(0).strip()
 
             parsed = json.loads(output_str.strip())
             

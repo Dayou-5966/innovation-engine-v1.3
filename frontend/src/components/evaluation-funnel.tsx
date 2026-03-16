@@ -73,11 +73,13 @@ const BASE_STEPS = [
     { id: 1, title: "Strategic Triage", desc: (n: number, dr: boolean) => n > 0 ? `Searching web + reading ${n} mandate doc${n > 1 ? "s" : ""} & evaluating alignment.` : "Searching web & evaluating strategic mandate alignment." },
     { id: 2, title: "Feasibility Scans", desc: (n: number, dr: boolean) => dr ? "Running Deep Research on TAM, SAM & IP (Takes 10–30 mins)." : "Live web search: market reports, competitor funding, patent filings." },
     { id: 3, title: "Stress Testing", desc: (n: number, dr: boolean) => dr ? "Running Deep Research for financial data (Takes 10–30 mins)." : "Running Monte Carlo simulations for financial risk." },
-    { id: 4, title: "Compiling Report", desc: (n: number, dr: boolean) => "Synthesising all stage findings into final report." }
+    { id: 4, title: "Compiling Report", desc: (n: number, dr: boolean) => "Synthesising all stage findings into final report." },
+    { id: 5, title: "Tactical Roadmap", desc: (n: number, dr: boolean) => "Generating 90-day OKRs and hiring priorities." }
 ];
 
 interface EvaluationFunnelProps {
     seedConcept?: string | null;
+    seedEvaluationResult?: any | null;
     onSeedConsumed?: () => void;
     onBackToGenesis?: () => void;
     aiModel: string;
@@ -86,7 +88,7 @@ interface EvaluationFunnelProps {
     mandateDocs: { filename: string }[];
 }
 
-export function EvaluationFunnel({ seedConcept, onSeedConsumed, onBackToGenesis, aiModel, deepResearchEnabled, deepResearchModel, mandateDocs }: EvaluationFunnelProps) {
+export function EvaluationFunnel({ seedConcept, seedEvaluationResult, onSeedConsumed, onBackToGenesis, aiModel, deepResearchEnabled, deepResearchModel, mandateDocs }: EvaluationFunnelProps) {
     const [idea, setIdea] = useState("");
     const [currentStep, setCurrentStep] = useState(0);
     const [stageProgressPct, setStageProgressPct] = useState(0);
@@ -100,24 +102,39 @@ export function EvaluationFunnel({ seedConcept, onSeedConsumed, onBackToGenesis,
     const [telemetryLog, setTelemetryLog] = useState<Record<string, any>>({});
     const [showTelemetry, setShowTelemetry] = useState(false);
     const autoStartedRef = useRef<string | null>(null);
+    const activePollingJobId = useRef<string | null>(null);
 
     const STEPS = BASE_STEPS.map(s => ({ ...s, resolvedDesc: s.desc(mandateDocs.length, deepResearchEnabled), model: aiModel }));
 
-    // When a seed concept arrives from Genesis Mode, prefill and auto-start
+    // When a seed concept survives component unmounts or arrives from Genesis/Portfolio
     useEffect(() => {
         if (seedConcept && seedConcept !== autoStartedRef.current) {
             autoStartedRef.current = seedConcept;
-            // Reset previous evaluation state
-            setEvaluationData(null);
-            setError(null);
-            setCurrentStep(0);
-            setIsEvaluating(false);
+            
             setIdea(seedConcept);
+            
+            // If we also received a completed evaluation result, fast-forward to the end
+            if (seedEvaluationResult) {
+                setEvaluationData(seedEvaluationResult);
+                setCurrentStep(STEPS.length + 1);
+                setStageProgressPct(100);
+                setDisplayProgressPct(100);
+                setIsEvaluating(false);
+                setError(null);
+                setTelemetryLog({});
+                setShowTelemetry(false);
+            } else {
+                // Regular genesis mode seed: just prefill, don't run
+                setEvaluationData(null);
+                setError(null);
+                setCurrentStep(0);
+                setIsEvaluating(false);
+            }
+            
             onSeedConsumed?.();
-            // Note: Auto-start removed to allow user time to configure Advanced Agent Overrides
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [seedConcept]);
+    }, [seedConcept, seedEvaluationResult]);
 
     // Smoothly animate the displayed progress percentage toward the actual backend target
     useEffect(() => {
@@ -182,10 +199,15 @@ export function EvaluationFunnel({ seedConcept, onSeedConsumed, onBackToGenesis,
             }
             const { job_id } = await startRes.json();
             setCurrentJobId(job_id);
+            activePollingJobId.current = job_id;
 
             // Step 2 — poll /api/evaluate/status/{job_id} every 3s until done
             const data = await new Promise<Record<string, unknown>>((resolve, reject) => {
                 const poll = async () => {
+                    // Abort loop if another job was started
+                    if (activePollingJobId.current !== job_id) {
+                        return reject(new Error("Evaluation aborted; a new job was started."));
+                    }
                     try {
                         const statusRes = await fetch(`${API_URL}/api/evaluate/status/${job_id}`, {
                             headers: { "Authorization": `Bearer ${token}` }
@@ -272,7 +294,8 @@ export function EvaluationFunnel({ seedConcept, onSeedConsumed, onBackToGenesis,
                                     "stage1_75": 2,
                                     "stage2": 2,
                                     "stage3": 3,
-                                    "stage4": 4
+                                    "stage4": 4,
+                                    "stage5": 5
                                 };
                                 const actualStep = stageMap[status.current_stage];
                                 if (actualStep !== undefined) {
@@ -306,6 +329,7 @@ export function EvaluationFunnel({ seedConcept, onSeedConsumed, onBackToGenesis,
 
     const handleReset = () => {
         autoStartedRef.current = null;
+        activePollingJobId.current = null;
         setIdea("");
         setCurrentStep(0);
         setStageProgressPct(0);

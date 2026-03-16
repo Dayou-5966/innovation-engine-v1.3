@@ -3,15 +3,6 @@ from database import Base
 import datetime
 
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
-
 
 class Evaluation(Base):
     __tablename__ = "evaluations"
@@ -21,12 +12,9 @@ class Evaluation(Base):
     concept_title = Column(String)
     total_score = Column(Integer)
     recommendation = Column(String)
-    full_json = Column(String)
+    full_json = Column(Text)
     model_used = Column(String, default="unknown")
-    # Multi-user: NULL means owned by the legacy "admin" account
-    user_id = Column(Integer, nullable=True, index=True)
-    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
-
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), index=True)
 
 class MandateDocument(Base):
     __tablename__ = "mandate_documents"
@@ -35,9 +23,8 @@ class MandateDocument(Base):
     filename = Column(String, nullable=False)
     mime_type = Column(String, nullable=False, default="text/plain")
     file_data = Column(LargeBinary, nullable=False)
-    # Multi-user: NULL means global / owned by admin
-    user_id = Column(Integer, nullable=True, index=True)
-    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), index=True)
 
 
 class EvaluationJob(Base):
@@ -48,7 +35,6 @@ class EvaluationJob(Base):
     status = Column(String, default="running")     # running | done | error | cancelled
     idea = Column(String)
     model_used = Column(String)
-    user_id = Column(Integer, nullable=True)
     result_json = Column(Text, nullable=True)       # serialised final report
     error_msg = Column(String, nullable=True)
     intermediate_json = Column(Text, nullable=True) # serialised intermediate stage data

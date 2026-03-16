@@ -119,7 +119,7 @@ export function Sidebar({
 
             {/* Footer Navigation */}
             <div className="pb-4 space-y-4">
-                <div className="mb-6 mb-2">
+                <div className="mb-2">
                     <MandateDocumentPanel onDocsChange={setMandateDocs} />
                 </div>
 

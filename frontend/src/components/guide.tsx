@@ -5,7 +5,7 @@ import {
     Brain, Globe, BarChart3, FileText, TrendingUp,
     AlertTriangle, CheckCircle2, Lightbulb, Clock,
     Zap, ShieldAlert, BookOpen, Info, Target, Layers,
-    RefreshCw, RadarIcon, Users, LineChart, Search, Download
+    RefreshCw, RadarIcon, Users, LineChart, Search
 } from "lucide-react";
 
 // ── Section wrapper ───────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ export function Guide({ aiModel }: { aiModel: string }) {
                     The Innovation Engine
                 </h1>
                 <p className="text-xl text-zinc-500 dark:text-zinc-400 font-light leading-relaxed max-w-2xl">
-                    A 4-stage AI pipeline that evaluates new ideas against your strategic mandate using live web research, financial modelling, and probabilistic risk analysis — all powered by {aiModel}.
+                    A 5-stage AI pipeline that evaluates new ideas against your strategic mandate using live web research, financial modelling, and probabilistic risk analysis — all powered by {aiModel}.
                 </p>
                 <div className="flex flex-wrap gap-3 pt-2">
                     {[
@@ -100,7 +100,6 @@ export function Guide({ aiModel }: { aiModel: string }) {
                         { icon: <TrendingUp className="h-3.5 w-3.5" />, label: "Signals & Signposts" },
                         { icon: <Zap className="h-3.5 w-3.5" />, label: "Evaluation Templates" },
                         { icon: <RefreshCw className="h-3.5 w-3.5" />, label: "Re-Run with New Model" },
-                        { icon: <Users className="h-3.5 w-3.5" />, label: "Multi-User Accounts" },
                     ].map(b => (
                         <span key={b.label} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                             {b.icon}{b.label}
@@ -115,7 +114,7 @@ export function Guide({ aiModel }: { aiModel: string }) {
                     {[
                         { step: "01", title: "Log in", desc: "Enter your clearance token at the Architect Gateway screen. Ask your administrator for the password.", icon: <ShieldAlert className="h-6 w-6" /> },
                         { step: "02", title: "Enter an idea", desc: "Go to Evaluation Funnel → type your idea in plain English. Optionally pick an Evaluation Template (Healthcare, B2B SaaS, etc.) to pre-load domain-specific prompt overrides before running.", icon: <Workflow className="h-6 w-6" /> },
-                        { step: "03", title: "Read the report", desc: "Wait ~3–5 min while the 4-stage pipeline runs. The full Investment Evaluation Report auto-appears when complete.", icon: <FileText className="h-6 w-6" /> },
+                        { step: "03", title: "Read the report", desc: "Wait ~3–5 min while the 5-stage pipeline runs. The full Investment Evaluation Report auto-appears when complete.", icon: <FileText className="h-6 w-6" /> },
                     ].map(s => (
                         <div key={s.step} className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-6 space-y-3">
                             <div className="flex items-center gap-3">
@@ -158,7 +157,7 @@ export function Guide({ aiModel }: { aiModel: string }) {
                             <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">Evaluation Funnel</h3>
                         </div>
                         <p className="text-sm text-zinc-700 dark:text-zinc-300 font-light leading-relaxed">
-                            <strong>Start here if you already have an idea.</strong> Type or paste your idea directly into the text field and hit Evaluate. The 4-stage pipeline runs automatically, taking ~3–5 minutes. You can watch each stage complete in real-time on the progress tracker.
+                            <strong>Start here if you already have an idea.</strong> Type or paste your idea directly into the text field and hit Evaluate. The 5-stage pipeline runs automatically, taking ~3–5 minutes. You can watch each stage complete in real-time on the progress tracker.
                         </p>
                         <div className="text-xs text-zinc-600 dark:text-zinc-400 font-mono bg-zinc-100 dark:bg-zinc-800 px-3 py-2 rounded-xl">
                             Paste idea → Run pipeline → Full investment report
@@ -210,10 +209,10 @@ export function Guide({ aiModel }: { aiModel: string }) {
                 </Callout>
             </Section>
 
-            {/* ── 3. The 4-Stage Pipeline ────────────────────────────────────── */}
-            <Section id="pipeline" title="The 4-Stage Evaluation Pipeline & Data Flow" icon={<Brain className="h-5 w-5" />}>
+            {/* ── 3. The 5-Stage Pipeline ────────────────────────────────────── */}
+            <Section id="pipeline" title="The 5-Stage Evaluation Pipeline & Data Flow" icon={<Brain className="h-5 w-5" />}>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 font-light leading-relaxed mb-2">
-                    Every idea passes through four sequential AI agents, each with a distinct specialisation. No stage can be skipped — the architecture enforces a <strong>strict linear data flow</strong> where every agent directly consumes the output reports generated by the preceding agents to build upon their context.
+                    Every idea passes through five sequential AI agents, each with a distinct specialisation. No stage can be skipped — the architecture enforces a <strong>strict linear data flow</strong> where every agent directly consumes the output reports generated by the preceding agents to build upon their context.
                 </p>
                 <div className="flex items-center gap-2 mb-4">
                     <span className="text-sm text-zinc-600 dark:text-zinc-400 font-light">Look for the</span>
@@ -238,13 +237,13 @@ export function Guide({ aiModel }: { aiModel: string }) {
                         outputs={["Market sizing (TAM/SAM/SOM)", "Competitor landscape", "IP Scan & White Space Map", "Bullish & Bearish Signals", "Adversarial Duel Transcript"]}
                     />
                     <PipelineStep
-                        num={3} title="Stress Testing" model={aiModel}
+                        num={3} title="Stress Testing" model="gemini-flash"
                         color="bg-rose-50 dark:bg-rose-950/20 border-rose-100 dark:border-rose-900/40 text-rose-900 dark:text-rose-200"
                         desc="Quantitative risk specialist builds a full financial model: CAPEX, OPEX, 5-year revenue projections, NPV/IRR, and runs a Monte Carlo simulation. Also identifies a Golden Lever."
                         outputs={["CAPEX & OPEX breakdown", "Revenue projections (Y1/Y3/Y5)", "Monte Carlo risk range", "Golden Lever sensitivity"]}
                     />
                     <PipelineStep
-                        num={4} title="Synthesis (Watchtower)" model={aiModel}
+                        num={4} title="Synthesis (Watchtower)" model="gemini-flash"
                         color="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-200"
                         desc="Chief Innovation Officer synthesises all stages into a D0 Scorecard and final justification. The Agentic Watchtower runs a final override check if the Pivot flag is thrown."
                         outputs={["D0 Scorecard (out of 50)", "Top 3 deal-killing risks", "Agentic Pivot verification", "Final Recommendation"]}
@@ -309,7 +308,7 @@ export function Guide({ aiModel }: { aiModel: string }) {
                         },
                         {
                             badge: "⚔️ Adversarial Duel", color: "border-l-4 border-orange-400 dark:border-orange-600 pl-4",
-                            desc: "If a Live Conflict Detected flag is raised during Stage 2, the pipeline pauses for a 3-turn debate between the Scout and Researcher agents, which is streamed straight into your Logic Trace terminal."
+                            desc: "If a Live Conflict Detected flag is raised during Stage 2, the pipeline triggers an automatic 3-turn debate between the Scout and Researcher agents. The duel transcript is streamed into your Logic Trace terminal."
                         },
                         {
                             badge: "🎯 Tactical Roadmap (OKRs)", color: "border-l-4 border-amber-400 dark:border-amber-600 pl-4",
@@ -352,8 +351,8 @@ export function Guide({ aiModel }: { aiModel: string }) {
                     <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-5 space-y-2">
                         <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> How to upload</h4>
                         <ol className="space-y-1.5 text-sm text-zinc-600 dark:text-zinc-400 font-light">
-                            <li className="flex gap-2"><span className="text-primary font-bold">1.</span>Click the <strong>mandate panel toggle</strong> (top-right of Evaluation Funnel)</li>
-                            <li className="flex gap-2"><span className="text-primary font-bold">2.</span>Upload PDF or paste text of your mandate / strategy document</li>
+                            <li className="flex gap-2"><span className="text-primary font-bold">1.</span>Open the <strong>Mandate Documents</strong> section in the left sidebar</li>
+                            <li className="flex gap-2"><span className="text-primary font-bold">2.</span>Upload a PDF or TXT file of your mandate / strategy document</li>
                             <li className="flex gap-2"><span className="text-primary font-bold">3.</span>The document is automatically sent to Stage 1 for clause-level alignment analysis</li>
                         </ol>
                     </div>
@@ -380,19 +379,19 @@ export function Guide({ aiModel }: { aiModel: string }) {
                     <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-4 space-y-1.5">
                         <p className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                             <Zap className="h-4 w-4 text-amber-500" />
-                            Instant Uploads
+                            Gemini File API Extraction
                         </p>
                         <p className="text-zinc-500 dark:text-zinc-400 font-light leading-relaxed">
-                            Instead of blocking the UI to perform OCR algorithms, PDF byte clusters are instantly persisted into backend storage.
+                            When you upload a PDF, it is sent to the Gemini File API for deep multimodal transcription — extracting text, tables, and chart descriptions. Large PDFs may take a moment to process.
                         </p>
                     </div>
                     <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-4 space-y-1.5">
                         <p className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                             <Layers className="h-4 w-4 text-primary" />
-                            Native Vision Reading
+                            Full Visual Parsing
                         </p>
                         <p className="text-zinc-500 dark:text-zinc-400 font-light leading-relaxed">
-                            During Stage 1 evaluation, the Agent dynamically reads the raw PDF file structure to synthesize context from diagrams, tables, and corporate letterheads directly.
+                            The AI reads tables, charts, graphs, and images within your PDF, producing detailed textual descriptions of visual data so the evaluation pipeline has full context.
                         </p>
                     </div>
                 </div>
@@ -468,33 +467,7 @@ export function Guide({ aiModel }: { aiModel: string }) {
                 </Callout>
             </Section>
 
-            {/* ── 8b. Multi-User Accounts ────────────────────────────────────── */}
-            <Section id="users" title="Multi-User Accounts" icon={<Users className="h-5 w-5" />}>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400 font-light leading-relaxed">
-                    In single-user (default) mode, the engine uses a single shared gateway password. When <strong>Multi-User Mode</strong> is enabled by the administrator, each person has their own account — evaluations, mandate documents, and portfolio data are isolated per user.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-5 space-y-2">
-                        <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-primary" /> Single-User Mode (default)</h4>
-                        <ul className="space-y-1.5 text-sm text-zinc-600 dark:text-zinc-400 font-light list-disc list-inside">
-                            <li>One shared gateway password for the whole team</li>
-                            <li>All evaluations visible to everyone who logs in</li>
-                            <li>No user management required</li>
-                        </ul>
-                    </div>
-                    <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-5 space-y-2">
-                        <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Multi-User Mode</h4>
-                        <ul className="space-y-1.5 text-sm text-zinc-600 dark:text-zinc-400 font-light list-disc list-inside">
-                            <li>Each user registers with a username + password</li>
-                            <li>Evaluations and mandate docs are scoped to your account</li>
-                            <li>Admin can create, list, and deactivate user accounts</li>
-                        </ul>
-                    </div>
-                </div>
-                <Callout type="warning">
-                    Multi-User Mode must be enabled by the administrator via the <code className="font-mono text-xs">MULTI_USER_MODE=true</code> environment variable on the backend server.
-                </Callout>
-            </Section>
+
 
             {/* ── 9. Tips ──────────────────────────────────────────────────── */}
             <Section id="tips" title="Tips for Better Evaluations" icon={<Lightbulb className="h-5 w-5" />}>
@@ -517,11 +490,31 @@ export function Guide({ aiModel }: { aiModel: string }) {
                 </div>
             </Section>
 
-            {/* ── 10. Limitations ───────────────────────────────────────────── */}
-            <Section id="limitations" title="Known Limitations" icon={<AlertTriangle className="h-5 w-5" />}>
+            {/* ── 10. Troubleshooting & Limitations ──────────────────────────── */}
+            <Section id="limitations" title="Troubleshooting & Limitations" icon={<AlertTriangle className="h-5 w-5" />}>
                 <Callout type="caution">
                     The Innovation Engine is a <strong>decision-support tool</strong>, not a replacement for human judgement, domain expertise, or formal due diligence. All outputs should be critically reviewed.
                 </Callout>
+                
+                {/* Launch Script / Hard Restart */}
+                <div className="mb-6 rounded-2xl border border-red-100 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/10 p-5 space-y-3">
+                    <h4 className="font-semibold text-sm text-red-900 dark:text-red-200 flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-red-600" /> Hard Reset & The Launch Button
+                    </h4>
+                    <p className="text-sm text-red-800/80 dark:text-red-300 font-light leading-relaxed">
+                        If the Evaluation Funnel gets stuck polling ("Waiting for orchestrated AI agents...") or if you suspect port conflicts, you can execute a full tear-down and restart using the included launch script. 
+                    </p>
+                    <div className="text-xs bg-red-900 text-red-100 dark:bg-black p-3 rounded-xl font-mono">
+                        $ ./launch.sh
+                    </div>
+                    <ul className="text-sm text-red-800/80 dark:text-red-300 font-light list-disc list-inside space-y-1">
+                        <li>Kills all existing <code>uvicorn</code> and <code>next dev</code> processes</li>
+                        <li>Force-clears ports 8000 (Backend) and 3000 (Frontend)</li>
+                        <li>Purges the Next.js cache to prevent Turbopack corruption</li>
+                        <li>Restarts all services clean</li>
+                    </ul>
+                </div>
+
                 <div className="space-y-3">
                     {[
                         { title: "Financial figures are directional, not audited", warn: true, desc: "The financial model (CAPEX, OPEX, NPV, IRR) is generated by an AI based on analogous data and stated assumptions. Treat all dollar figures as order-of-magnitude estimates requiring validation by a CFO or finance team before any investment decision." },
@@ -575,6 +568,7 @@ export function Guide({ aiModel }: { aiModel: string }) {
                         { stage: "Stage 2", time: "60–120s", note: "Market + IP Scan" },
                         { stage: "Stage 3", time: "30–60s", note: "Financial Model" },
                         { stage: "Stage 4", time: "30–60s", note: "Report Synthesis" },
+                        { stage: "Stage 5", time: "10–20s", note: "Tactical Roadmap" },
                     ].map(t => (
                         <div key={t.stage} className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-4 space-y-1">
                             <p className="text-xs font-mono text-zinc-400">{t.stage}</p>

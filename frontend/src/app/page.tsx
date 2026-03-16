@@ -14,6 +14,7 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentView, setCurrentView] = useState<"genesis" | "evaluation" | "portfolio" | "guide">("genesis");
   const [seedConcept, setSeedConcept] = useState<string | null>(null);
+  const [seedEvaluationResult, setSeedEvaluationResult] = useState<any | null>(null);
   const [aiModel, setAiModel] = useState<string>(process.env.NEXT_PUBLIC_DEFAULT_AI_MODEL || "gemini-2.5-flash-lite");
   const [deepResearchEnabled, setDeepResearchEnabled] = useState<boolean>(false);
   const [deepResearchModel, setDeepResearchModel] = useState<string>(process.env.NEXT_PUBLIC_DEFAULT_DEEP_RESEARCH_MODEL || "deep-research-pro-preview-12-2025");
@@ -27,7 +28,14 @@ export default function Home() {
     const token = localStorage.getItem("auth_token");
     if (token) {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        // Normalize Base64URL → Base64 before decoding (JWTs use URL-safe alphabet with no padding)
+        let b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        // Pad with '=' so length is a multiple of 4 to prevent atob() DOMException
+        const pad = b64.length % 4;
+        if (pad) {
+          b64 += '='.repeat(4 - pad);
+        }
+        const payload = JSON.parse(atob(b64));
         if (payload.exp && payload.exp * 1000 > Date.now()) {
           setIsAuthenticated(true);
         } else {
@@ -144,7 +152,11 @@ export default function Home() {
           <div className={currentView === "evaluation" ? "block" : "hidden"}>
             <EvaluationFunnel
               seedConcept={seedConcept}
-              onSeedConsumed={() => setSeedConcept(null)}
+              seedEvaluationResult={seedEvaluationResult}
+              onSeedConsumed={() => {
+                setSeedConcept(null);
+                setSeedEvaluationResult(null);
+              }}
               onBackToGenesis={() => setCurrentView("genesis")}
               aiModel={aiModel}
               deepResearchEnabled={deepResearchEnabled}
@@ -154,9 +166,10 @@ export default function Home() {
           </div>
           <div className={currentView === "portfolio" ? "block" : "hidden"}>
             <PortfolioArchive
-              onRerun={(idea, model) => {
+              onRerun={(idea, model, result) => {
                 setSeedConcept(idea);
                 setAiModel(model);
+                if (result) setSeedEvaluationResult(result);
                 setCurrentView("evaluation");
               }}
             />
