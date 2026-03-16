@@ -123,6 +123,50 @@ def get_db():
         db.close()
 
 
+# ── Shared helpers ────────────────────────────────────────────────────────────
+
+class _DocProto:
+    """Lightweight mandate-document proxy used by async job threads."""
+    __slots__ = ("filename", "mime_type", "file_data")
+
+    def __init__(self, filename: str, mime_type: str, file_data: bytes):
+        self.filename = filename
+        self.mime_type = mime_type
+        self.file_data = file_data
+
+
+def _make_job_callbacks(job_id: str):
+    """Factory that creates the progress_callback and check_cancelled closures for a job."""
+
+    def _progress_cb(stage: str, data: typing.Any):
+        try:
+            if stage == "status":
+                _update_job(job_id, current_stage=data)
+            elif stage == "progress":
+                _update_job(job_id, current_progress=float(data))
+            else:
+                with SessionLocal() as s:
+                    job = s.query(models.EvaluationJob).filter(models.EvaluationJob.id == job_id).first()
+                    if job:
+                        existing = json.loads(job.intermediate_json or "{}")
+                        existing[stage] = data
+                        job.intermediate_json = json.dumps(existing)
+                        job.updated_at = datetime.now(timezone.utc)
+                        s.commit()
+        except Exception as cb_exc:
+            app_log.warning("Progress callback error (job=%s): %s", job_id, cb_exc)
+
+    def _check_cancelled() -> bool:
+        try:
+            with SessionLocal() as s:
+                job = s.query(models.EvaluationJob).filter(models.EvaluationJob.id == job_id).first()
+                return bool(job and job.cancelled)
+        except Exception:
+            return False
+
+    return _progress_cb, _check_cancelled
+
+
 # ── Text extraction helpers ───────────────────────────────────────────────────
 
 def _extract_text_from_pdf_gemini(data: bytes, filename: str) -> str:
@@ -484,11 +528,6 @@ def api_evaluate_async(
 
     user_id = get_user_id_from_token(token_payload)
     docs = db.query(models.MandateDocument).order_by(models.MandateDocument.created_at.asc()).all()
-
-    class _DocProto:
-        def __init__(self, f, m, d):
-            self.filename = f; self.mime_type = m; self.file_data = d
-
     mandate_docs = [_DocProto(d.filename, d.mime_type, d.file_data) for d in docs]
 
     job_id = str(uuid.uuid4())
@@ -508,31 +547,7 @@ def api_evaluate_async(
     audit_log.info("Async job created: job_id=%s user_id=%s model=%s idea='%s...'",
                    job_id, user_id, payload.model, payload.idea[:60])
 
-    def _progress_cb(stage: str, data: typing.Any):
-        try:
-            if stage == "status":
-                _update_job(job_id, current_stage=data)
-            elif stage == "progress":
-                _update_job(job_id, current_progress=float(data))
-            else:
-                with SessionLocal() as s:
-                    job = s.query(models.EvaluationJob).filter(models.EvaluationJob.id == job_id).first()
-                    if job:
-                        existing = json.loads(job.intermediate_json or "{}")
-                        existing[stage] = data
-                        job.intermediate_json = json.dumps(existing)
-                        job.updated_at = datetime.now(timezone.utc)
-                        s.commit()
-        except Exception as cb_exc:
-            app_log.warning("Progress callback error: %s", cb_exc)
-
-    def _check_cancelled() -> bool:
-        try:
-            with SessionLocal() as s:
-                job = s.query(models.EvaluationJob).filter(models.EvaluationJob.id == job_id).first()
-                return bool(job and job.cancelled)
-        except Exception:
-            return False
+    _progress_cb, _check_cancelled = _make_job_callbacks(job_id)
 
     def _run():
         try:
@@ -687,31 +702,7 @@ def api_rerun_evaluation(
 
     idea_text = record.idea
 
-    def _progress_cb(stage: str, data: typing.Any):
-        try:
-            if stage == "status":
-                _update_job(job_id, current_stage=data)
-            elif stage == "progress":
-                _update_job(job_id, current_progress=float(data))
-            else:
-                with SessionLocal() as s:
-                    job = s.query(models.EvaluationJob).filter(models.EvaluationJob.id == job_id).first()
-                    if job:
-                        existing = json.loads(job.intermediate_json or "{}")
-                        existing[stage] = data
-                        job.intermediate_json = json.dumps(existing)
-                        job.updated_at = datetime.now(timezone.utc)
-                        s.commit()
-        except Exception as cb_exc:
-            app_log.warning("Rerun progress callback error: %s", cb_exc)
-
-    def _check_cancelled() -> bool:
-        try:
-            with SessionLocal() as s:
-                job = s.query(models.EvaluationJob).filter(models.EvaluationJob.id == job_id).first()
-                return bool(job and job.cancelled)
-        except Exception:
-            return False
+    _progress_cb, _check_cancelled = _make_job_callbacks(job_id)
 
     def _run():
         try:
@@ -863,31 +854,7 @@ def api_retry_from_stage(
 
     idea_text = original_job.idea
 
-    def _progress_cb(stage: str, data: typing.Any):
-        try:
-            if stage == "status":
-                _update_job(new_job_id, current_stage=data)
-            elif stage == "progress":
-                _update_job(new_job_id, current_progress=float(data))
-            else:
-                with SessionLocal() as s:
-                    job = s.query(models.EvaluationJob).filter(models.EvaluationJob.id == new_job_id).first()
-                    if job:
-                        existing = json.loads(job.intermediate_json or "{}")
-                        existing[stage] = data
-                        job.intermediate_json = json.dumps(existing)
-                        job.updated_at = datetime.now(timezone.utc)
-                        s.commit()
-        except Exception as cb_exc:
-            app_log.warning("Retry progress callback error: %s", cb_exc)
-
-    def _check_cancelled() -> bool:
-        try:
-            with SessionLocal() as s:
-                job = s.query(models.EvaluationJob).filter(models.EvaluationJob.id == new_job_id).first()
-                return bool(job and job.cancelled)
-        except Exception:
-            return False
+    _progress_cb, _check_cancelled = _make_job_callbacks(new_job_id)
 
     def _run():
         try:

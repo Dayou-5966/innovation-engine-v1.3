@@ -10,7 +10,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # JWT_SECRET is used exclusively for signing tokens — separate from the login password
-JWT_SECRET = os.environ.get("JWT_SECRET", "innovation-engine-jwt-secret-key")
+_DEFAULT_JWT_SECRET = "innovation-engine-jwt-secret-key"
+JWT_SECRET = os.environ.get("JWT_SECRET", "").strip()
+if not JWT_SECRET or JWT_SECRET == _DEFAULT_JWT_SECRET:
+    import sys
+    sys.stderr.write(
+        "[FATAL] JWT_SECRET is not set or is the insecure default value. "
+        "Please set a unique secret in your .env file before starting the server.\n"
+    )
+    sys.exit(1)
 # ADMIN_HASH is the bcrypt hash of the actual gateway password stored in .env
 ADMIN_HASH = os.environ.get("ADMIN_HASH", "").strip()
 ALGORITHM = "HS256"

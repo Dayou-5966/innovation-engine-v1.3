@@ -59,7 +59,7 @@ def _call(client, model: str, prompt: typing.Any, temperature: float = 0.3, tool
         "contents": [{"parts": parts}],
         "generationConfig": {
             "temperature": temperature,
-            "maxOutputTokens": 8192
+            "maxOutputTokens": 65536
         }
     }
     
@@ -224,11 +224,20 @@ def _run_deep_research(api_key: str, topic: str, model: str, progress_callback=N
 
                     # Cache persistence for background runs
                     try:
-                        import hashlib, os
-                        os.makedirs("data/research_cache", exist_ok=True)
-                        h = hashlib.md5(topic.encode()).hexdigest()
-                        with open(f"data/research_cache/{h}.json", "w") as f:
-                            json.dump({"topic": topic, "result": final_text}, f)
+                        import hashlib, os as _os, time as _ct
+                        # Anchor cache to backend directory so it is CWD-independent
+                        _backend_dir = _os.path.dirname(_os.path.abspath(__file__))
+                        _cache_dir = _os.path.join(_backend_dir, "data", "research_cache")
+                        _os.makedirs(_cache_dir, exist_ok=True)
+                        # Use SHA-256 to avoid MD5 collision risk
+                        h = hashlib.sha256(topic.encode()).hexdigest()
+                        _cache_path = _os.path.join(_cache_dir, f"{h}.json")
+                        # Check TTL: 7 days
+                        _TTL_SECS = 7 * 24 * 3600
+                        if _os.path.exists(_cache_path) and (_ct.time() - _os.path.getmtime(_cache_path)) > _TTL_SECS:
+                            _os.remove(_cache_path)  # Expire stale entry
+                        with open(_cache_path, "w") as f:
+                            json.dump({"topic": topic, "result": final_text, "cached_at": _ct.time()}, f)
                     except Exception as ce:
                         print(f"[Engine] Cache write failed: {ce}")
 
@@ -571,11 +580,16 @@ DO NOT include markdown formatting like ```json. Output raw JSON ONLY.
                 stage2_dr_data = f"(Deep Research explicitly disabled by user. Proceeding with standard web search capability during synthesis phase. YOU MUST EXECUTE THIS RESEARCHER DIRECTIVE VIA GOOGLE SEARCH INSTEAD: {researcher_directive})"
 
             # ── Base Loop Context ──
+            # Issue #12: escape curly braces in DR data and Stage 1 brief so they don't
+            # trip up the f-string interpolation in the loop prompts below.
+            _s1_safe = stage1_brief.replace("{", "{{").replace("}", "}}")
+            _dr_safe = stage2_dr_data.replace("{", "{{").replace("}", "}}")
+
             base_s2_context = f"""You are the Lead Market Intelligence Manager. You are executing a segmented intelligence sweep for the following idea:
 IDEA: \"{idea}\"
 
 === STRATEGIC BRIEF ===
-{stage1_brief}
+{_s1_safe}
 
 === THE 3 MOST DANGEROUS ASSUMPTIONS (VULNERABILITIES) ===
 The Interrogator has identified the following top vulnerabilities in this idea:
@@ -584,7 +598,7 @@ You MUST actively address and scrutinize these assumptions in your report.
 
 === GROUND TRUTH DEEP RESEARCH (The Structural Researcher) ===
 Treat this data as verified ground truth unless your live Scout search directly contradicts it:
-{stage2_dr_data}
+{_dr_safe}
 """
             if overrides.get("stage2"):
                 base_s2_context += f"\n\n=== USER OVERRIDE DIRECTIVE ===\n{overrides['stage2']}\n===============================\n"
@@ -668,6 +682,21 @@ Write Chapters 5 & 6 of the final report. You MUST search patents explicitly if 
 Output the final two chapters in markdown formatting.
 """
             loop3_res = _call(None, PRO, loop3_prompt, temperature=0.2, tools=search_tool)
+
+            # ── Extract IP White Space coordinates from Loop 3 output ──
+            import re as _re
+            ip_white_space_data = None
+            try:
+                ws_match = _re.search(
+                    r'"white_space_coordinates"\s*:\s*(\[.*?\])',
+                    loop3_res, _re.DOTALL
+                )
+                if ws_match:
+                    ip_white_space_data = json.loads(ws_match.group(1))
+                    print(f"[Engine] IP White Space Map extracted: {len(ip_white_space_data)} coordinates")
+            except Exception as _wse:
+                print(f"[Engine] IP White Space extraction failed (non-fatal): {_wse}")
+                ip_white_space_data = None
 
             # Assemble Unified Report
             stage2_report = f"{loop1_res}\n\n{loop2_res}\n\n{loop3_res}"
@@ -816,11 +845,11 @@ What specific new question must the Synthesizer answer to see if the idea can be
 You have received the following context:
 
 === STRATEGIC BRIEF (Stage 1) ===
-{stage1_brief[:4000]}
+{stage1_brief[:8000]}
 === END ===
 
 === MARKET & IP REPORT (Stage 2) ===
-{stage2_report[:4000]}
+{stage2_report[:20000]}
 === END ===
 
 === LIVE FINANCIAL SIGNALS (Stage 1.75) ===
@@ -830,7 +859,7 @@ You have received the following context:
 IDEA: \"{idea}\"
 
 === REAL-WORLD FINANCIAL BENCHMARKS (live web search — {len(benchmark_data)} chars) ===
-{benchmark_data[:5000]}
+{benchmark_data[:12000]}
 
 === END BENCHMARKS ===
 
@@ -1310,7 +1339,7 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
             progress_callback("logic_trace", logic_trace)
 
         stage4_prompt = f"""You are the Chief Innovation Officer compiling a final Investment Evaluation Report.
-You have received deep-dive analysis from 3 specialist teams:
+You have received deep-dive analysis from 4 specialist teams:
 
 === STAGE 1: STRATEGIC BRIEF ===
 {stage1_brief}
@@ -1430,10 +1459,11 @@ BROKEN STRING:
                 
             except Exception as repair_err:
                 print(f"[Engine] JSON repair also failed: {repair_err}. Raising ValueError.")
-                with open("/tmp/bad_output_str1.json", "w") as f:
-                    f.write(output_str)
-                with open("/tmp/bad_output_str2.json", "w") as f:
-                    f.write(locals().get("output_str2", ""))
+                if os.environ.get("DEBUG_JSON_DUMP"):
+                    with open("/tmp/bad_output_str1.json", "w") as f:
+                        f.write(output_str)
+                    with open("/tmp/bad_output_str2.json", "w") as f:
+                        f.write(locals().get("output_str2", ""))
                 raise ValueError(f"AI returned irrevocably malformed JSON. Initial error: {json_err}")
 
         if progress_callback:
@@ -1463,7 +1493,7 @@ BROKEN STRING:
             print("[Engine] Stage 5: Execution Lead generating Tactical Roadmap...")
             if progress_callback: progress_callback("status", "stage5")
             
-            top_risks = "\n".join([f"- {r.get('Risk', 'Unknown')}: {r.get('Rationale', 'N/A')}" for r in parsed.get("D0_Scorecard", {}).get("Top_3_Deal_Killing_Risks", [])])
+            top_risks = "\n".join([f"- {r.get('Title', 'Unknown')}: {r.get('Description', 'N/A')}" for r in parsed.get("Top_3_Deal_Killing_Risks", [])])
             
             stage5_prompt = f"""You are the Execution Lead (Stage 5). 
 The CIO has decided to advance this idea: {idea}
@@ -1523,92 +1553,9 @@ Return exactly this JSON schema. No markdown fences.
         raise ce
     except Exception as e:
         import traceback
-        print(f"[Engine] Pipeline error: {e}")
+        print(f"[Engine] Pipeline unexpected error: {e}")
         print(traceback.format_exc())
-
-        base_value = 1000000.0
-        returns = np.random.normal(loc=1.05, scale=0.15, size=(1000, 5))
-        portfolio = base_value * np.cumprod(returns, axis=1)  # type: ignore
-        final_values = portfolio[:, -1]  # type: ignore
-        var_95 = float(np.percentile(final_values, 5))
-        simulate_risk = "High Risk" if var_95 < base_value * 0.8 else "Acceptable Risk"
-        is_proceed = isinstance(idea, str) and len(idea) > 30
-        title = str(idea)[:20] + "..." if idea else "Unknown Concept"
-        
-        median_val = float(np.median(final_values))
-
-        return {
-            "Title": "Project: " + title,
-            "Eureka_Moment": f"A rapidly scalable approach to {str(idea)[:30].lower()} balancing technical ambition with commercial viability.",
-            "Strategist_Verdict": {
-                "Kill_Switch": "PASS" if is_proceed else "VETO",
-                "Mandate_Clause_Cited": "N/A",
-                "Reasoning": "[Fallback mode — LLM unavailable] Unable to perform strategic analysis."
-            },
-            "D0_Scorecard": {
-                "Total_Score": 42 if is_proceed else 24,
-                "Strategic_Alignment": {"Score": 9 if is_proceed else 4, "Rationale": "Strong alignment with core mandate." if is_proceed else "Fails The Kill Switch."},
-                "Disruptive_Potential": {"Score": 8, "Rationale": "High potential for market disruption."},
-                "Technical_Feasibility": {"Score": 7 if is_proceed else 3, "Rationale": "Requires significant R&D but feasible."},
-                "Commercial_Impact": {"Score": 9, "Rationale": "Massive total addressable market."},
-                "Scalability": {"Score": 9, "Rationale": "Highly scalable architecture once baseline is built."}
-            },
-            "Top_3_Deal_Killing_Risks": [
-                {"Title": "Supply Chain Bottleneck", "Description": "Dependencies on rare earth materials could halt production.", "Probability": "Medium", "Severity": "High", "Mitigation": "Diversify suppliers. Build 6-month inventory buffer. Explore synthetic alternatives."},
-                {"Title": "Regulatory Friction", "Description": "Pending legislation could arbitrarily change compliance requirements.", "Probability": "Medium", "Severity": "High", "Mitigation": "Engage regulatory counsel early. Monitor legislative pipeline. Design for modularity."},
-                {"Title": "Capital Efficiency", "Description": "High capital expenditure compared to existing business streams.", "Probability": "High", "Severity": "Medium", "Mitigation": "Stage capital deployment. Pursue grant funding. Validate unit economics at small scale first."}
-            ],
-            "Market_Verification": {
-                "TAM": "$14.2 Billion (estimated)",
-                "SAM": "$2.8 Billion",
-                "SOM": "$140M by Year 3",
-                "Key_Competitors": [
-                    {"Name": "Incumbent A", "Approach": "Legacy hardware approach", "Differentiator": "This idea offers a software-first model"},
-                    {"Name": "Startup B", "Approach": "Venture-backed disruptor", "Differentiator": "Better enterprise integration story"},
-                    {"Name": "BigCo C", "Approach": "Platform play", "Differentiator": "Narrower focus with deeper specialisation"}
-                ],
-                "Supply_Chain": "Requires securing tier-1 offshore contractors.",
-                "Regulatory_Environment": "Subject to applicable industry regulations."
-            },
-            "IP_Scan": {
-                "Key_Patent_Families": "3 adjacent patents found in related domains.",
-                "Freedom_To_Operate_Risk": "Medium",
-                "Patent_Application_Opportunity": "High opportunity in the specific implementation approach."
-            },
-            "Financial_Simulation": {
-                "Base_Investment_USD": 1000000,
-                "5th_Percentile_Value": float(round(var_95, 2)),
-                "Median_Value": float(round(median_val, 2)),
-                "Risk_Assessment": simulate_risk
-            },
-            "Agent_Summaries": {
-                "Strategist": {
-                    "Theme": "Strategic Alignment",
-                    "Detailed_Observations": [
-                        "Strong alignment with core mandate." if is_proceed else "Fails The Kill Switch.",
-                        "Potential for market disruption is high."
-                    ]
-                },
-                "Market_Researcher": {
-                    "Theme": "Market Expansion",
-                    "Detailed_Observations": [
-                        "Massive total addressable market.",
-                        "Requires securing tier-1 offshore contractors."
-                    ]
-                },
-                "Risk_Specialist": {
-                    "Theme": "Operational Viability",
-                    "Detailed_Observations": [
-                        "Highly scalable architecture once baseline is built.",
-                        f"Monte Carlo simulation indicates {simulate_risk} with a 5th percentile value of ${float(round(var_95, 2))}."
-                    ]
-                }
-            },
-            "Deep_Research_Utilized": deep_research_enabled,
-            "Recommendation": "PROCEED TO INCUBATION" if is_proceed else "REJECT",
-            "Justification": (
-                f"[Fallback mode — LLM unavailable] Local Monte Carlo simulation indicates "
-                f"{simulate_risk} with a 5th percentile value of ${float(round(var_95, 2))}. "
-                "Restore a valid GEMINI_API_KEY to enable live AI evaluation."
-            )
-        }
+        # Re-raise so main.py can surface a proper 500 error.
+        # We do NOT silently return fabricated data here — that would mislead users
+        # into treating a failed evaluation as a real result.
+        raise RuntimeError(f"Pipeline failed at an unexpected stage: {e}") from e
