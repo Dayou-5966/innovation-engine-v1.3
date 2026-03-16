@@ -483,128 +483,11 @@ C. STRATEGIC SIGNPOSTS (3-5 items): Future milestones that would confirm or kill
             raise InterruptedError("Evaluation cancelled by user after Stage 1.75")
 
         # ─────────────────────────────────────────────────────────────────────
-        # STAGE 2 — MARKET SCANNER + IP SPECIALIST  (AI Engine: {PRO})
+        # STAGE 2 — MARKET SCANNER + IP SPECIALIST (AI Engine: {PRO} - SEGMENTED LOOPS)
         # ─────────────────────────────────────────────────────────────────────
-        stage2_prompt = f"""You are a team of two specialists: a Market Intelligence Analyst and an IP Specialist.
-You have received the following Strategic Brief from the Strategist:
-
-=== STRATEGIC BRIEF ===
-{stage1_brief}
-=== END BRIEF ===
-
-IDEA:
-\"{idea}\"
-
-Produce a detailed Market & IP Intelligence Report covering ALL of the following.
-Use Google Search actively to find current data — search for recent funding rounds, market reports,
-latest patent filings, and news about competitors. Do NOT rely solely on training knowledge.
-A comprehensive report that is as long as necessary to be bulletproof, prioritizing density over length.
-
-SYNTHESIS REQUIREMENT: You are an expert analyst. Do not just list facts from search. You must critically evaluate the data, synthesize it with your own market intuition, and explain *why* these facts matter for the idea's chance of success. Your deep AI reasoning must bind the search data together into a cohesive strategic narrative.
-
-
-DATA INTEGRITY DIRECTIVE — MANDATORY:
-You have access to Google Search. You MUST search the web BEFORE writing each section below.
-Do NOT write from memory first and search later — search FIRST, then write based on what you find.
-- Every market figure, competitor fact, patent reference, and trend claim MUST be cited with
-  an external source: [Source: URL or Report Name — Date]
-- VALID sources: Market research reports (name the firm + year), news articles (URL), patent databases,
-  SEC filings, press releases, industry publications. Always include URL or exact report reference.
-- INVALID: Do NOT cite your training data, "industry estimates", or "widely reported" as a source.
-  Every claim must have a verifiable, external origin.
-- If a specific figure cannot be found via search, write [Source: Not found via search — AI estimate]
-  and explain your estimation methodology. Never present an estimate as if it were a searched fact.
-- RECENCY: Only use data from 2024-2026. If you find older data, note its age and flag as potentially stale.
-- ANTI-FABRICATION: Never invent competitor names, funding amounts, patent numbers, or market sizes.
-  If you can only find 3 real competitors via search, list 3 — do NOT pad with made-up companies.
-
-MANAGER CONSTRAINTS (MANDATORY):
-1. Quantitative Proof Requirement: Every claim in the Economic Logic / Market Sizing section must include at least one specific dollar value or percentage found in the source data.
-2. The "Anti-Hallucination" Check: If you fail to find data on a specific entity's revenue or key metric, the report must state [Data Gap Identified] and MUST output a specific "Search Strategy" instruction explaining exactly how a human analyst should query databases (e.g., Pitchbook, Capital IQ, local registries) to find this missing data. Do not let the gap be a dead end.
-
-1. MARKET SIZING (Market Intelligence Analyst)
-   - Search for the most recent market research reports on this sector.
-   - Total Addressable Market (TAM): Specific dollar figure with methodology (top-down or bottom-up).
-     Cite the report name and year. [Source: required]
-   - Serviceable Addressable Market (SAM): Specific dollar figure for the realistic segment this idea
-     can capture in years 1-5. [Source: required]
-   - Serviceable Obtainable Market (SOM): Realistic market share target in year 3, with justification.
-   - INVESTIGATE THIS SPECIFIC STRUCTURAL BARRIER (RESEARCHER DIRECTIVE): [[RESEARCHER_DIRECTIVE]]
-
-2. COMPETITIVE LANDSCAPE (Market Intelligence Analyst)
-   - Search the web for the latest news on competitors and adjacent players.
-   - List AT LEAST 5 named competitors. For each provide:
-     * Company name
-     * Their current solution / approach
-     * Most recent funding round or revenue figure [Source: required]
-     * Key differentiator vs. this idea
-   - Identify the 2 most dangerous competitive threats and why.
-
-3. ECOSYSTEM & SUPPLY CHAIN (Market Intelligence Analyst)
-   - Key technology dependencies: platforms, APIs, or infrastructure this idea relies on
-   - Tier-1 supply chain or partnership requirements
-   - Regulatory environment: which jurisdictions, agencies, or frameworks apply?
-     Search for any recent regulatory changes in this domain. [Source: required]
-
-4. TECHNICAL FEASIBILITY (Market Intelligence Analyst)
-   - Current Technology Readiness Level (TRL 1-9): Justify your rating
-   - Search for recent academic papers or industry reports on the core technology stack.
-   - Key technical risks and unsolved engineering challenges [Source: required]
-   - Estimated timeline to MVP and to commercial scale
-
-5. IP LANDSCAPE (IP Specialist)
-   - You MUST explicitly search patents.google.com and worldwide.espacenet.com for relevant patent families.
-   - List 3-5 specific patent families, patent numbers, or prior art areas [Source: required]
-   - "White Space" Mandate: Explicitly identify "White Space Areas" — domains where your active search yielded no direct patent coverage — and explain why these gaps present a strategic opportunity for the overarching mandate.
-   - At the VERY END of this IP Landscape section, you MUST output a raw JSON block containing exactly the following schema. Use EXACTLY these keys. No markdown fences.
-```json
-{{
-  "white_space_coordinates": [
-    {{ "label": "Specific Unpatented Application", "x_axis_tech_complexity": 75, "y_axis_market_saturation": 20 }}
-  ]
-}}
-```
-   - Key patent holders and their strategic relevance
-   - Freedom-to-operate assessment: low/medium/high risk of infringement
-
-6. LIVE SIGNALS & SIGNPOSTS
-   CRITICAL: Use Google Search RIGHT NOW for this entire section. Every single item below
-   MUST come from a LIVE web search result — not from your training data or general knowledge.
-   Search for the most recent information available (2024-2026 only).
-   CITE EVERY ITEM WITH [Source: URL — date accessed/published].
-   INVESTIGATE THIS SPECIFIC FRICTION POINT (SCOUT DIRECTIVE): [[SCOUT_DIRECTIVE]]
-
-   A. BULLISH SIGNALS (3-5 items): Real, observable events happening NOW that support this idea.
-      Search for: recent funding rounds in the space, regulatory tailwinds, major player acquisitions,
-      academic breakthroughs, supply cost drops, new government incentives, partnership announcements.
-      Each signal MUST be a specific recent event with an exact date you found via search.
-      Format: "[Signal description — exact date] [Source: URL]"
-      IMPORTANT: If you cannot find a real event via search, state "[No recent signal found via search]"
-      rather than making one up from training data.
-
-   B. BEARISH SIGNALS (3-5 items): Real, observable events happening NOW that threaten this idea.
-      Search for: competitor failures, regulatory blocks, cost spikes, market contraction data,
-      major player pivoting away, project cancellations, supply chain disruptions, policy reversals.
-      Each MUST be a specific, recent, search-verified event with date.
-      Format: "[Signal description — exact date] [Source: URL]"
-
-   C. MARKET SIGNPOSTS (3-5 items): Future milestones that would confirm or kill the commercial thesis.
-      Base these on trends you discovered during your live search above.
-      Each signpost should be:
-      - Milestone: The specific triggering event to watch
-      - Bull_Case: What it means if it happens (1 sentence)
-      - Bear_Case: What it means if it does NOT happen by deadline (1 sentence)
-      - Watch_By: Timeframe (e.g. Q3 2026)
-      - Source_To_Monitor: Where to track it (publication, regulator, index) [Source: URL]
-
-Output your full Market & IP Intelligence Report as plain text (no JSON).
-"""
         if progress_callback:
             progress_callback("status", "stage2")
             progress_callback("progress", 25)
-            
-        if overrides.get("stage2"):
-            stage2_prompt += f"\n\n=== USER OVERRIDE DIRECTIVE ===\nThe user has provided the following explicit instructions for your market research. You MUST prioritize this directive over standard rules if they conflict:\n{overrides['stage2']}\n===============================\n"
 
         if resume_from_stage > 2 and precomputed_stage2:
             print("[Engine] Stage 2: SKIPPED (using precomputed output)")
@@ -681,51 +564,113 @@ DO NOT include markdown formatting like ```json. Output raw JSON ONLY.
             # ── Stage 2 Pre-Pass: Deep Research ──
             dr2_topic = f"Perform a ruthless technical IP and market audit for: '{idea}'. Extract exact TAM/SAM sizes, fundings for top 5 competitors. For the IP landscape, you MUST explicitly search patents.google.com and worldwide.espacenet.com to extract 3-5 specific patent family numbers related to this technology. INTERROGATOR DIRECTIVE: {researcher_directive}"
             if deep_research_enabled:
-                stage2_dr_data = _run_deep_research(api_key, dr2_topic, deep_research_model, progress_callback, "Stage 2", 50, 80)
+                stage2_dr_data = _run_deep_research(api_key, dr2_topic, deep_research_model, progress_callback, "Stage 2", 50, 70)
             else:
-                progress_callback("progress", 80)
+                progress_callback("progress", 70)
                 print("[Engine] Stage 2: Deep Research disabled by user.")
                 stage2_dr_data = f"(Deep Research explicitly disabled by user. Proceeding with standard web search capability during synthesis phase. YOU MUST EXECUTE THIS RESEARCHER DIRECTIVE VIA GOOGLE SEARCH INSTEAD: {researcher_directive})"
-            
-            stage2_prompt_with_dr = f"""{stage2_prompt}
 
-=== INTELLIGENCE TEAMS AND DATA SOURCES ===
-You are the Lead Market Intelligence Manager. You are receiving data from two autonomous field agents:
-1. THE SCOUT (Live Signals): You generated these signals just now via your live Google Search tools. They represent real-time pricing, recent news, and immediate competitive pivots.
-2. THE SIGNAL SCRAPER (Stage 1.75): This agent has already scoured the web and found the following recent, verifiable financial signals:
-{stage1_75_signals}
-3. THE STRUCTURAL RESEARCHER (Deep Research): The report below contains comprehensive TAM/SAM/SOM market sizes, regulatory frameworks, and academic IP analysis gathered via a slow, structural search.
+            # ── Base Loop Context ──
+            base_s2_context = f"""You are the Lead Market Intelligence Manager. You are executing a segmented intelligence sweep for the following idea:
+IDEA: \"{idea}\"
 
-Your objective is to Synthesize and Verify this intelligence into a cohesive Market Report.
-
-CRITICAL CONFLICT RESOLUTION DIRECTIVE:
-You must cross-reference your live Scout signals and the Signal Scraper findings against the structural Deep Research data below.
+=== STRATEGIC BRIEF ===
+{stage1_brief}
 
 === THE 3 MOST DANGEROUS ASSUMPTIONS (VULNERABILITIES) ===
 The Interrogator has identified the following top vulnerabilities in this idea:
-[[TOP_VULNERABILITIES]]
-You MUST actively address and scrutinize these assumptions in your final report.
+{formatted_vulnerabilities}
+You MUST actively address and scrutinize these assumptions in your report.
+
+=== GROUND TRUTH DEEP RESEARCH (The Structural Researcher) ===
+Treat this data as verified ground truth unless your live Scout search directly contradicts it:
+{stage2_dr_data}
+"""
+            if overrides.get("stage2"):
+                base_s2_context += f"\n\n=== USER OVERRIDE DIRECTIVE ===\n{overrides['stage2']}\n===============================\n"
+
+            print("[Engine] Stage 2 Loop 1: Competitive Landscape & Funding Audit running...")
+            progress_callback("progress", 75)
+            loop1_prompt = f"""{base_s2_context}
+
+*** TASK: LOOP 1 - COMPETITIVE LANDSCAPE & MARKET SIZING ***
+Write Chapters 1 & 2 of the final report. Use Google Search to verify recent funding rounds and market sizing against the deep research context.
 
 MANAGER CONSTRAINTS (MANDATORY):
-1. Quantitative Proof Requirement: Every claim in the Economic Logic / Market Sizing section must include at least one specific dollar value or percentage found in the source data. No vague "large market" descriptors allowed.
-2. The "Anti-Hallucination" Check: If the Scout and Researcher both fail to find data on a specific competitor's revenue, the report must state [Data Gap Identified] instead of making an estimate. If a [Data Gap Identified] occurs in a critical area (like Competitor Revenue), the Manager must provide a specific 'Search Instruction' for a human analyst to follow up on later.
-3. The Pivot Signal: If the Scout detects a competitor using a different tech stack or strategy than the Researcher reported, prioritize the Scout's tech stack for the Stress-Test section.
-4. Conflict highlighting: If the Deep Research data indicates a competitor is well-funded, but the live Scout signal shows they recently pivoted or laid off staff, you MUST highlight this discrepancy in a bold [Live Conflict Detected] block.
-5. Iterative Tool Calls: You MUST NOT attempt to gather all live signals in a single tool call. You must iteratively search, synthesize, and then search again for the next section to ensure equal data density across all six chapters.
+1. Quantitative Proof Requirement: Every claim in the Economic Logic / Market Sizing section must include at least one specific dollar value or percentage found in the source data.
+2. The "Anti-Hallucination" Check: If you fail to find data on a specific entity's revenue or key metric, the report must state [Data Gap Identified] and MUST output a specific "Search Strategy" instruction explaining exactly how a human analyst should query databases to find this missing data. Do not let the gap be a dead end.
 
-=== DEEP RESEARCH FACTUAL REPORT (The Structural Researcher) ===
-The following raw data has been autonomously extracted. Treat this data as verified ground truth unless your live Scout search directly contradicts it.
-{stage2_dr_data}
-=== END DEEP RESEARCH REPORT ===
+1. MARKET SIZING (Market Intelligence Analyst)
+   - Total Addressable Market (TAM): Specific dollar figure with methodology (top-down or bottom-up). Cite the report name and year. [Source: required]
+   - Serviceable Addressable Market (SAM): Specific dollar figure for years 1-5. [Source: required]
+   - Serviceable Obtainable Market (SOM): Realistic market share target in year 3.
+   - INVESTIGATE THIS SPECIFIC STRUCTURAL BARRIER (RESEARCHER DIRECTIVE): {researcher_directive}
+
+2. COMPETITIVE LANDSCAPE (Market Intelligence Analyst)
+   - List AT LEAST 5 named competitors. For each provide: Company name, their current solution, most recent funding round or revenue figure [Source: required], and Key differentiator.
+   - Identify the 2 most dangerous competitive threats and why.
+
+Output the two chapters in markdown formatting.
 """
-            # Inject Interrogator directives dynamically
-            stage2_prompt_with_dr = stage2_prompt_with_dr.replace("[[SCOUT_DIRECTIVE]]", scout_directive)
-            stage2_prompt_with_dr = stage2_prompt_with_dr.replace("[[RESEARCHER_DIRECTIVE]]", researcher_directive)
-            stage2_prompt_with_dr = stage2_prompt_with_dr.replace("[[TOP_VULNERABILITIES]]", formatted_vulnerabilities)
+            loop1_res = _call(None, PRO, loop1_prompt, temperature=0.2, tools=search_tool)
 
-            print("[Engine] Stage 2: Market Scanner + IP running (Synthesis)...")
+            print("[Engine] Stage 2 Loop 2: Regulatory Walls & Tech Feasibility running...")
             progress_callback("progress", 85)
-            stage2_report = _call(None, PRO, stage2_prompt_with_dr, temperature=0.2, tools=search_tool)
+            loop2_prompt = f"""{base_s2_context}
+
+*** TASK: LOOP 2 - REGULATORY WALLS & TECH FEASIBILITY ***
+Write Chapters 3 & 4 of the final report. Use Google Search to verify specific regulatory frameworks and technology timelines.
+
+3. ECOSYSTEM & SUPPLY CHAIN (Market Intelligence Analyst)
+   - Key technology dependencies: platforms, APIs, or infrastructure this idea relies on.
+   - Tier-1 supply chain or partnership requirements.
+   - Regulatory environment: which jurisdictions, agencies, or frameworks apply?
+   - Search for any recent regulatory changes in this domain. [Source: required]
+
+4. TECHNICAL FEASIBILITY (Market Intelligence Analyst)
+   - Current Technology Readiness Level (TRL 1-9): Justify your rating.
+   - Key technical risks and unsolved engineering challenges. [Source: required]
+   - Estimated timeline to MVP and to commercial scale.
+
+Output the two chapters in markdown formatting.
+"""
+            loop2_res = _call(None, PRO, loop2_prompt, temperature=0.2, tools=search_tool)
+
+            print("[Engine] Stage 2 Loop 3: IP Landscape & Live Signals running...")
+            progress_callback("progress", 95)
+            stage1_75_signals_safe = stage1_75_signals.replace("{", "{{").replace("}", "}}")
+            loop3_prompt = f"""{base_s2_context}
+
+*** THE SIGNAL SCRAPER (PRE-CACHED SIGNALS) ***
+{stage1_75_signals_safe}
+
+*** TASK: LOOP 3 - IP LANDSCAPE & LIVE SIGNALS ***
+Write Chapters 5 & 6 of the final report. You MUST search patents explicitly if not provided.
+
+5. IP LANDSCAPE (IP Specialist)
+   - List 3-5 specific patent families or patent numbers. [Source: required]
+   - "White Space" Mandate: Explicitly identify domains where your active search yielded no direct patent coverage.
+   - At the VERY END of this IP section, you MUST output a raw JSON block containing exactly this schema (NO markdown fences):
+{{
+  "white_space_coordinates": [
+    {{ "label": "Specific Unpatented Application", "x_axis_tech_complexity": 75, "y_axis_market_saturation": 20 }}
+  ]
+}}
+   - Freedom-to-operate assessment: low/medium/high risk.
+
+6. LIVE SIGNALS & SIGNPOSTS
+   Use Google Search RIGHT NOW. Every item MUST come from a live web search (2024-2026).
+   INVESTIGATE THIS SPECIFIC FRICTION POINT (SCOUT DIRECTIVE): {scout_directive}
+   A. BULLISH SIGNALS (3-5 items): Real events happening NOW. Format: "[Signal description — date] [Source: URL]"
+   B. BEARISH SIGNALS (3-5 items): Real events happening NOW. Format: "[Signal description — date] [Source: URL]"
+   C. MARKET SIGNPOSTS (3-5 items): Future milestones (Bull_Case, Bear_Case, Watch_By, Source_To_Monitor).
+
+Output the final two chapters in markdown formatting.
+"""
+            loop3_res = _call(None, PRO, loop3_prompt, temperature=0.2, tools=search_tool)
+
+            # Assemble Unified Report
+            stage2_report = f"{loop1_res}\n\n{loop2_res}\n\n{loop3_res}"
             progress_callback("progress", 100)
             progress_callback("stage2", {"report": stage2_report, "model": PRO})
             

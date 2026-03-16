@@ -129,16 +129,58 @@ export interface EvaluationResult {
     }
 }
 
-const customRenderers = {
+const strategistRenderers = {
     h3: ({ node, ...props }: any) => (
-        <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 mt-8 mb-4 border-b border-zinc-200 dark:border-zinc-800 pb-2" {...props} />
+        <h3 className="text-xl font-semibold text-violet-900 dark:text-violet-200 flex items-center gap-2 mt-8 mb-4 border-b border-violet-200 dark:border-violet-900/50 pb-3" {...props} />
     ),
     ul: ({ node, ...props }: any) => (
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 p-0" {...props} />
     ),
     li: ({ node, ...props }: any) => (
-        <li className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm list-none hover:shadow-md transition-shadow" {...props} />
+        <li className="bg-violet-50/30 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-900/30 rounded-xl p-5 shadow-sm list-none hover:shadow-md hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-200 ease-out" {...props} />
     ),
+    strong: ({ node, ...props }: any) => (
+        <strong className="font-semibold text-violet-700 dark:text-violet-300" {...props} />
+    ),
+    p: ({ node, ...props }: any) => (
+        <p className="text-zinc-700 dark:text-zinc-300 font-light leading-relaxed my-3" {...props} />
+    )
+};
+
+const marketRenderers = {
+    h3: ({ node, ...props }: any) => (
+        <h3 className="text-xl font-semibold text-sky-900 dark:text-sky-200 flex items-center gap-2 mt-8 mb-4 border-b border-sky-200 dark:border-sky-900/50 pb-3" {...props} />
+    ),
+    ul: ({ node, ...props }: any) => (
+        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 p-0" {...props} />
+    ),
+    li: ({ node, ...props }: any) => (
+        <li className="bg-sky-50/30 dark:bg-sky-900/10 border border-sky-100 dark:border-sky-900/30 rounded-xl p-5 shadow-sm list-none hover:shadow-md hover:border-sky-200 dark:hover:border-sky-800 transition-all duration-200 ease-out" {...props} />
+    ),
+    strong: ({ node, ...props }: any) => (
+        <strong className="font-semibold text-sky-700 dark:text-sky-300" {...props} />
+    ),
+    p: ({ node, ...props }: any) => (
+        <p className="text-zinc-700 dark:text-zinc-300 font-light leading-relaxed my-3" {...props} />
+    )
+};
+
+const quantRenderers = {
+    h3: ({ node, ...props }: any) => (
+        <h3 className="text-xl font-semibold text-rose-900 dark:text-rose-200 flex items-center gap-2 mt-8 mb-4 border-b border-rose-200 dark:border-rose-900/50 pb-3" {...props} />
+    ),
+    ul: ({ node, ...props }: any) => (
+        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 p-0" {...props} />
+    ),
+    li: ({ node, ...props }: any) => (
+        <li className="bg-rose-50/30 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 rounded-xl p-5 shadow-sm list-none hover:shadow-md hover:border-rose-200 dark:hover:border-rose-800 transition-all duration-200 ease-out" {...props} />
+    ),
+    strong: ({ node, ...props }: any) => (
+        <strong className="font-semibold text-rose-700 dark:text-rose-300" {...props} />
+    ),
+    p: ({ node, ...props }: any) => (
+        <p className="text-zinc-700 dark:text-zinc-300 font-light leading-relaxed my-3" {...props} />
+    )
 };
 
 // ── FinTable helper ────────────────────────────────────────────────────────────
@@ -214,48 +256,49 @@ export function VisualOutputDashboard({ data }: { data: EvaluationResult }) {
                 <div className="flex gap-2 p-1 mb-8 bg-zinc-100/80 dark:bg-zinc-800/50 rounded-xl max-w-fit">
                     <button
                         onClick={() => setActiveTab("executive")}
-                        className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                        className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
                             activeTab === "executive" 
                                 ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50" 
                                 : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                         }`}
                     >
+                        <BadgeCheck size={16} className={activeTab === "executive" ? "text-primary" : "opacity-70"} />
                         Executive Summary
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("market")}
-                        className={`px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${
-                            activeTab === "market" 
-                                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50" 
-                                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                        }`}
-                    >
-                        <Globe size={16} className={activeTab === "market" ? "text-primary" : "opacity-70"} />
-                        Market Intelligence Report
                     </button>
                     {data.Strategist_Report && (
                         <button
                             onClick={() => setActiveTab("strategist")}
                             className={`px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${
                                 activeTab === "strategist" 
-                                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50" 
-                                    : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                                    ? "bg-violet-100 text-violet-900 shadow-sm dark:bg-violet-900/50 dark:text-violet-100 ring-1 ring-violet-200 dark:ring-violet-800"
+                                    : "text-zinc-500 hover:text-violet-700 dark:text-zinc-400 dark:hover:text-violet-300"
                             }`}
                         >
-                            <Target size={16} className={activeTab === "strategist" ? "text-primary" : "opacity-70"} />
+                            <Target size={16} className={activeTab === "strategist" ? "text-violet-600 dark:text-violet-400" : "opacity-70"} />
                             Strategist Report
                         </button>
                     )}
+                    <button
+                        onClick={() => setActiveTab("market")}
+                        className={`px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${
+                            activeTab === "market" 
+                                ? "bg-sky-100 text-sky-900 shadow-sm dark:bg-sky-900/50 dark:text-sky-100 ring-1 ring-sky-200 dark:ring-sky-800" 
+                                : "text-zinc-500 hover:text-sky-700 dark:text-zinc-400 dark:hover:text-sky-300"
+                        }`}
+                    >
+                        <Globe size={16} className={activeTab === "market" ? "text-sky-600 dark:text-sky-400" : "opacity-70"} />
+                        Market Intelligence Report
+                    </button>
                     {data.Quant_Report && (
                         <button
                             onClick={() => setActiveTab("quant")}
                             className={`px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${
                                 activeTab === "quant" 
-                                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50" 
-                                    : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                                    ? "bg-rose-100 text-rose-900 shadow-sm dark:bg-rose-900/50 dark:text-rose-100 ring-1 ring-rose-200 dark:ring-rose-800" 
+                                    : "text-zinc-500 hover:text-rose-700 dark:text-zinc-400 dark:hover:text-rose-300"
                             }`}
                         >
-                            <Calculator size={16} className={activeTab === "quant" ? "text-primary" : "opacity-70"} />
+                            <Calculator size={16} className={activeTab === "quant" ? "text-rose-600 dark:text-rose-400" : "opacity-70"} />
                             Quant & Risk Report
                         </button>
                     )}
@@ -266,17 +309,17 @@ export function VisualOutputDashboard({ data }: { data: EvaluationResult }) {
             {activeTab === "market" && data.Deep_Research_Market_Report && (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 pb-6 border-b border-zinc-100 dark:border-zinc-800">
-                        <div className="p-3 bg-primary/10 rounded-xl">
-                            <Globe className="h-6 w-6 text-primary" />
+                        <div className="p-3 bg-sky-100/50 dark:bg-sky-900/20 rounded-xl ring-1 ring-sky-200 dark:ring-sky-800/50">
+                            <Globe className="h-6 w-6 text-sky-600 dark:text-sky-400" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Deep Research Synthesized Market Report</h2>
-                            <p className="text-zinc-500 dark:text-zinc-400 mt-1">Full 6-chapter analysis compiled by the Lead Market Intelligence Manager.</p>
+                            <h2 className="text-2xl font-bold text-sky-950 dark:text-sky-50">Deep Research Synthesized Market Report</h2>
+                            <p className="text-sky-600/80 dark:text-sky-400 mt-1">Full analysis compiled by the Lead Market Intelligence Manager.</p>
                         </div>
                     </div>
-                    <div className="prose prose-zinc dark:prose-invert max-w-none bg-zinc-50/50 dark:bg-zinc-900/30 p-8 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                    <div className="prose prose-zinc dark:prose-invert max-w-none bg-sky-50/10 dark:bg-sky-950/10 p-8 rounded-2xl border border-sky-100/50 dark:border-sky-900/20 shadow-sm">
                         <div className="text-zinc-800 dark:text-zinc-200">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={customRenderers}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={marketRenderers}>
                                 {data.Deep_Research_Market_Report}
                             </ReactMarkdown>
                         </div>
@@ -288,17 +331,17 @@ export function VisualOutputDashboard({ data }: { data: EvaluationResult }) {
             {activeTab === "strategist" && data.Strategist_Report && (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 pb-6 border-b border-zinc-100 dark:border-zinc-800">
-                        <div className="p-3 bg-primary/10 rounded-xl">
-                            <Target className="h-6 w-6 text-primary" />
+                        <div className="p-3 bg-violet-100/50 dark:bg-violet-900/20 rounded-xl ring-1 ring-violet-200 dark:ring-violet-800/50">
+                            <Target className="h-6 w-6 text-violet-600 dark:text-violet-400" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Detailed Strategist Report</h2>
-                            <p className="text-zinc-500 dark:text-zinc-400 mt-1">Foundational analysis of mandate alignment and core strategy.</p>
+                            <h2 className="text-2xl font-bold text-violet-950 dark:text-violet-50">Detailed Strategist Report</h2>
+                            <p className="text-violet-600/80 dark:text-violet-400 mt-1">Foundational analysis of mandate alignment and core strategy.</p>
                         </div>
                     </div>
-                    <div className="prose prose-zinc dark:prose-invert max-w-none bg-zinc-50/50 dark:bg-zinc-900/30 p-8 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                    <div className="prose prose-zinc dark:prose-invert max-w-none bg-violet-50/10 dark:bg-violet-950/10 p-8 rounded-2xl border border-violet-100/50 dark:border-violet-900/20 shadow-sm">
                         <div className="text-zinc-800 dark:text-zinc-200">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={customRenderers}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={strategistRenderers}>
                                 {data.Strategist_Report}
                             </ReactMarkdown>
                         </div>
@@ -310,12 +353,12 @@ export function VisualOutputDashboard({ data }: { data: EvaluationResult }) {
             {activeTab === "quant" && data.Quant_Report && (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 pb-6 border-b border-zinc-100 dark:border-zinc-800">
-                        <div className="p-3 bg-primary/10 rounded-xl">
-                            <Calculator className="h-6 w-6 text-primary" />
+                        <div className="p-3 bg-rose-100/50 dark:bg-rose-900/20 rounded-xl ring-1 ring-rose-200 dark:ring-rose-800/50">
+                            <Calculator className="h-6 w-6 text-rose-600 dark:text-rose-400" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Quantitative Risk & Financial Report</h2>
-                            <p className="text-zinc-500 dark:text-zinc-400 mt-1">Monte Carlo output detailing standard deviations, volatility, and worst-case scenario analysis.</p>
+                            <h2 className="text-2xl font-bold text-rose-950 dark:text-rose-50">Quantitative Risk & Financial Report</h2>
+                            <p className="text-rose-600/80 dark:text-rose-400 mt-1">Monte Carlo output detailing standard deviations, volatility, and worst-case scenario analysis.</p>
                         </div>
                     </div>
 
@@ -362,9 +405,9 @@ export function VisualOutputDashboard({ data }: { data: EvaluationResult }) {
                         </div>
                     )}
 
-                    <div className="prose prose-zinc dark:prose-invert max-w-none bg-zinc-50/50 dark:bg-zinc-900/30 p-8 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                    <div className="prose prose-zinc dark:prose-invert max-w-none bg-rose-50/10 dark:bg-rose-950/10 p-8 rounded-2xl border border-rose-100/50 dark:border-rose-900/20 shadow-sm">
                         <div className="text-zinc-800 dark:text-zinc-200">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={customRenderers}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={quantRenderers}>
                                 {data.Quant_Report}
                             </ReactMarkdown>
                         </div>
