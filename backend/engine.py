@@ -814,7 +814,7 @@ What specific new question must the Synthesizer answer to see if the idea can be
                     "parameters": {
                         "type": "OBJECT",
                         "properties": {
-                            "base_value": {"type": "NUMBER", "description": "Base investment in USD"},
+                            "base_value": {"type": "NUMBER", "description": "Base investment in absolute USD dollars (e.g., use 15500000 for $15.5M. DO NOT USE 15.5)"},
                             "volatility_scale": {"type": "NUMBER", "description": "Standard deviation for returns (0.15 for SaaS, 0.40+ for Hardware)"},
                             "iterations": {"type": "INTEGER", "description": "Number of iterations (use 10000)"},
                             "risk_threshold": {"type": "NUMBER", "description": "Threshold multiplier for risk assessment (e.g., 0.95 for low risk appetite mandate, 0.80 for standard)"}
@@ -1066,7 +1066,9 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
           stage3_url = f"https://generativelanguage.googleapis.com/v1beta/models/{FLASH}:generateContent"
           stage3_headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
 
-          resp3a_data = None
+          function_call = None
+          stage3_report = ""
+
           for s3_init_attempt in range(1, 4):
               try:
                   payload3a = {
@@ -1077,29 +1079,36 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
                   r = requests.post(stage3_url, headers=stage3_headers, json=payload3a, timeout=120)
                   if not r.ok:
                       raise ValueError(f"HTTP {r.status_code}: {r.text[:500]}")
+                  
                   resp3a_data = r.json()
-                  if resp3a_data.get("candidates"):
-                      break
-                  raise ValueError("Stage 3 initial call returned no candidates")
+                  if not resp3a_data.get("candidates"):
+                      raise ValueError("Stage 3 initial call returned no candidates")
+
+                  ai_message = resp3a_data["candidates"][0].get("content", {})
+                  ai_parts = ai_message.get("parts", [])
+
+                  # Try to find a tool call
+                  function_call = None
+                  for p in ai_parts:
+                      if "functionCall" in p:
+                          function_call = p["functionCall"]
+                          break
+
+                  # If no tool call, extract text
+                  if not function_call:
+                      stage3_report = "".join([p.get("text", "") for p in ai_parts]).strip()
+                      if not stage3_report:
+                          raise ValueError("Stage 3a returned empty text and no tool call")
+
+                  # If we got here, we either have a function_call OR valid text. Break the retry loop.
+                  break
+
               except Exception as e3:
                   print(f"[Engine] Stage 3 init attempt {s3_init_attempt}/3 failed: {e3}")
                   if s3_init_attempt < 3:
                       _time.sleep(6 * s3_init_attempt)
                   else:
                       raise
-
-          # Execute Monte Carlo tool call if requested
-          if progress_callback:
-              progress_callback("progress", 70)
-
-          ai_message = resp3a_data["candidates"][0].get("content", {})
-          ai_parts = ai_message.get("parts", [])
-
-          function_call = None
-          for p in ai_parts:
-              if "functionCall" in p:
-                  function_call = p["functionCall"]
-                  break
 
           monte_carlo_result = "{}"
           volatility_scale = 0.15
@@ -1112,8 +1121,15 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
               if fc_name == "monte_carlo_simulation_tool":
                   volatility_scale = float(args.get("volatility_scale", 0.25))
                   risk_threshold = float(args.get("risk_threshold", 0.80))
+                  
+                  # AI sometimes provides base_value in Millions (e.g. 15.5 instead of 15500000)
+                  # If the value is unrealistically small (< 100,000), assume it's in Millions.
+                  raw_base = float(args.get("base_value", 5000000))
+                  if raw_base < 100000:
+                      raw_base *= 1000000
+
                   monte_carlo_result = monte_carlo_simulation(
-                      base_value=float(args.get("base_value", 5000000)),
+                      base_value=raw_base,
                       iterations=int(args.get("iterations", 10000)),
                       volatility_scale=volatility_scale,
                       risk_threshold=risk_threshold
@@ -1159,11 +1175,6 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
                           _time.sleep(6 * s3_attempt)
                       else:
                           raise
-          else:
-              # No tool call — use direct Stage 3a output, with empty-response check
-              stage3_report = "".join([p.get("text", "") for p in ai_parts]).strip()
-              if not stage3_report:
-                  raise ValueError("Stage 3a returned empty text and no tool call was made")
 
           if progress_callback:
               progress_callback("progress", 100)
