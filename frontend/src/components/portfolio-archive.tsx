@@ -91,7 +91,7 @@ export function PortfolioArchive({ onRerun }: PortfolioArchiveProps) {
 
     // Re-run state
     const [rerunRecord, setRerunRecord] = useState<EvaluationRecord | null>(null);
-    const [rerunModel, setRerunModel] = useState("gemini-2.5-flash-lite");
+    const [rerunModel, setRerunModel] = useState(process.env.NEXT_PUBLIC_DEFAULT_AI_MODEL || "gemini-2.5-flash-lite");
     const [rerunJobId, setRerunJobId] = useState<string | null>(null);
     const [rerunStatus, setRerunStatus] = useState<"idle" | "running" | "done" | "error">("idle");
     const [rerunError, setRerunError] = useState<string | null>(null);

@@ -97,6 +97,8 @@ export function EvaluationFunnel({ seedConcept, onSeedConsumed, onBackToGenesis,
     const [overrides, setOverrides] = useState({ stage1: "", stage2: "", stage3: "", stage4: "" });
     const [showOverrides, setShowOverrides] = useState(false);
     const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+    const [telemetryLog, setTelemetryLog] = useState<Record<string, any>>({});
+    const [showTelemetry, setShowTelemetry] = useState(false);
     const autoStartedRef = useRef<string | null>(null);
 
     const STEPS = BASE_STEPS.map(s => ({ ...s, resolvedDesc: s.desc(mandateDocs.length, deepResearchEnabled), model: aiModel }));
@@ -146,6 +148,8 @@ export function EvaluationFunnel({ seedConcept, onSeedConsumed, onBackToGenesis,
         setError(null);
         setEvaluationData(null);
         setCurrentJobId(null);
+        setTelemetryLog({});
+        setShowTelemetry(false);
 
         try {
             const token = localStorage.getItem("auth_token");
@@ -258,10 +262,14 @@ export function EvaluationFunnel({ seedConcept, onSeedConsumed, onBackToGenesis,
                         } else if (status.status === "error") {
                             reject(new Error(status.error ?? "Pipeline error."));
                         } else {
-                            // Use current_stage to strictly set the UI step
+                            if (status.intermediate) {
+                                setTelemetryLog(status.intermediate);
+                            }
+                            
                             if (status.current_stage) {
                                 const stageMap: Record<string, number> = {
                                     "stage1": 1,
+                                    "stage1_75": 2,
                                     "stage2": 2,
                                     "stage3": 3,
                                     "stage4": 4
@@ -305,6 +313,8 @@ export function EvaluationFunnel({ seedConcept, onSeedConsumed, onBackToGenesis,
         setIsEvaluating(false);
         setEvaluationData(null);
         setError(null);
+        setTelemetryLog({});
+        setShowTelemetry(false);
     };
 
     const cancelEvaluation = async () => {
@@ -577,8 +587,149 @@ export function EvaluationFunnel({ seedConcept, onSeedConsumed, onBackToGenesis,
                             })}
                         </div>
                     </div>
+
+                    {/* Live Reasoning Trace */}
+                    {telemetryLog.logic_trace && telemetryLog.logic_trace.length > 0 && (
+                        <div className="mt-8 pt-8 border-t border-zinc-100 dark:border-zinc-800/80 animate-in fade-in duration-500">
+                            <h4 className="text-sm font-semibold uppercase tracking-widest text-zinc-500 mb-4 flex items-center gap-2">
+                                <Workflow className="text-zinc-400 w-4 h-4" />
+                                Live Reasoning Trace
+                            </h4>
+                            <div className="space-y-4">
+                                {telemetryLog.logic_trace.map((trace: string, i: number) => {
+                                    const isAlert = trace.includes("ALERT:") || trace.includes("🚨 CRITICAL CONFLICT");
+                                    const isDuelHeader = trace.includes("THE ADVERSARIAL DUEL");
+                                    const isDuelDialogue = trace.startsWith("Scout:") || trace.startsWith("Researcher:") || trace.startsWith("Consensus:");
+                                    
+                                    if (isDuelHeader || isDuelDialogue) {
+                                        return (
+                                            <div key={i} className={`flex gap-4 items-start animate-in slide-in-from-left-4 fade-in duration-500 fill-mode-both ${isDuelHeader ? 'mt-6 mb-2' : 'ml-4'}`} style={{ animationDelay: `${i * 50}ms` }}>
+                                                {isDuelHeader ? (
+                                                    <div className="w-full text-center py-2 border-y border-purple-200 dark:border-purple-900/50 bg-gradient-to-r from-transparent via-purple-500/5 dark:via-purple-500/10 to-transparent">
+                                                        <span className="text-xs font-bold uppercase tracking-widest text-purple-600 dark:text-purple-400">
+                                                            {trace}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                                                        <p className="text-sm font-mono leading-relaxed text-zinc-700 dark:text-zinc-300">
+                                                            <span className="font-bold text-purple-600 dark:text-purple-400 mr-2">
+                                                                {trace.split(':')[0]}:
+                                                            </span>
+                                                            {trace.split(':').slice(1).join(':').trim()}
+                                                        </p>
+                                                    </>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div key={i} className={`flex gap-4 items-start animate-in slide-in-from-left-4 fade-in duration-500 fill-mode-both ${isAlert ? 'bg-red-50 dark:bg-red-900/10 -mx-4 px-4 py-3 rounded-xl border border-red-200 dark:border-red-900/40' : ''}`} style={{ animationDelay: `${i * 50}ms` }}>
+                                            <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${isAlert ? 'animate-pulse bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-primary'}`} />
+                                            <p className={`text-sm font-mono leading-relaxed ${isAlert ? 'text-red-700 dark:text-red-400 font-bold' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                                                {trace}
+                                            </p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* Agent Telemetry Live Viewer */}
+            {(isEvaluating || Object.keys(telemetryLog).length > 0) && (
+                <div className="mt-12 rounded-2xl border border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/30 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <button
+                        onClick={() => setShowTelemetry(!showTelemetry)}
+                        className="flex w-full items-center justify-between px-6 py-4 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800/50 transition-colors"
+                    >
+                        <div className="flex items-center gap-3">
+                            <Zap size={16} className={isEvaluating ? "text-primary animate-pulse" : "text-zinc-500"} />
+                            Live Agent Telemetry
+                            {isEvaluating && <span className="text-[10px] uppercase font-bold tracking-widest bg-primary/10 text-primary px-2 py-0.5 rounded-full ml-2">Recording</span>}
+                        </div>
+                        {showTelemetry ? <ChevronUp size={16} className="text-zinc-500" /> : <ChevronDown size={16} className="text-zinc-500" />}
+                    </button>
+
+                    {showTelemetry && (
+                        <div className="border-t border-zinc-200 dark:border-zinc-800 bg-black/5 dark:bg-black/20 p-6">
+                            <div className="font-mono text-xs leading-relaxed max-h-[400px] overflow-y-auto space-y-6 text-zinc-800 dark:text-zinc-300">
+                                {!telemetryLog.stage1 && <div className="text-zinc-500 animate-pulse">Waiting for orchestrated AI agents...</div>}
+                                
+                                {telemetryLog.stage1 && (
+                                    <div className="space-y-2 animate-in fade-in duration-300">
+                                        <div className="font-bold text-violet-600 dark:text-violet-400 border-b border-violet-200 dark:border-violet-900/50 pb-1">▶ STAGE 1 (STRATEGIST) BRIEFING</div>
+                                        <div className="pl-4 whitespace-pre-wrap">{typeof telemetryLog.stage1 === 'string' ? telemetryLog.stage1 : telemetryLog.stage1.brief}</div>
+                                    </div>
+                                )}
+
+                                {telemetryLog.stage1_5 && (
+                                    <div className="space-y-2 animate-in fade-in duration-300">
+                                        <div className="font-bold text-orange-600 dark:text-orange-400 border-b border-orange-200 dark:border-orange-900/50 pb-1">▶ STAGE 1.5 (RUTHLESS INTERROGATOR) DIRECTIVES</div>
+                                        <div className="pl-4 space-y-4">
+                                            <div>
+                                                <span className="font-semibold text-zinc-900 dark:text-zinc-100">Top Vulnerabilities Identified:</span>
+                                                <ul className="list-disc pl-5 mt-1 opacity-80">
+                                                    {Array.isArray(telemetryLog.stage1_5.top_vulnerabilities) 
+                                                        ? telemetryLog.stage1_5.top_vulnerabilities.map((v: string, i: number) => <li key={i}>{v}</li>)
+                                                        : <li>{telemetryLog.stage1_5.top_vulnerabilities}</li>}
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <span className="font-semibold text-zinc-900 dark:text-zinc-100">Scout Directive:</span>
+                                                <div className="mt-1 opacity-80">{telemetryLog.stage1_5.scout_directive}</div>
+                                            </div>
+                                            <div>
+                                                <span className="font-semibold text-zinc-900 dark:text-zinc-100">Structural Researcher Directive:</span>
+                                                <div className="mt-1 opacity-80">{telemetryLog.stage1_5.researcher_directive}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {telemetryLog.search_trace && (
+                                    <div className="space-y-2 animate-in fade-in duration-300 bg-sky-50 dark:bg-sky-900/10 -mx-4 px-4 py-3 rounded-xl border border-sky-100 dark:border-sky-900/30">
+                                        <div className="font-bold text-sky-600 dark:text-sky-400 flex items-center gap-2">
+                                            <Loader size={12} className="animate-spin" /> 
+                                            STAGE 2 (SCOUT) SEARCH TRACE
+                                        </div>
+                                        <div className="pl-4 space-y-3 mt-2">
+                                            <div>
+                                                <span className="font-semibold text-xs uppercase tracking-wider text-sky-800 dark:text-sky-300">Queries Executed:</span>
+                                                <ul className="list-disc pl-5 mt-1 opacity-80">
+                                                    {(telemetryLog.search_trace.queries || []).map((q: string, i: number) => <li key={i}>"{q}"</li>)}
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <span className="font-semibold text-xs uppercase tracking-wider text-sky-800 dark:text-sky-300">Sources Scanned:</span>
+                                                <ul className="list-none pl-1 mt-1 opacity-80 space-y-1">
+                                                    {(telemetryLog.search_trace.urls || []).map((u: string, i: number) => (
+                                                        <li key={i} className="flex gap-2 truncate">
+                                                            <span className="opacity-50">↳</span> 
+                                                            <a href={u} target="_blank" rel="noreferrer" className="hover:underline hover:text-sky-600 truncate">{u}</a>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {telemetryLog.stage2 && (
+                                    <div className="space-y-2 animate-in fade-in duration-300">
+                                        <div className="font-bold text-emerald-600 dark:text-emerald-400 border-b border-emerald-200 dark:border-emerald-900/50 pb-1">▶ STAGE 2 (RESEARCHER) FINDINGS</div>
+                                        <div className="pl-4 whitespace-pre-wrap">{telemetryLog.stage2.report}</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Error */}
             {error && (

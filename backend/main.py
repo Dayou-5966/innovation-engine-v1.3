@@ -92,16 +92,16 @@ RATE_GENERATE = os.environ.get("RATE_LIMIT_GENERATE", "10/minute")
 
 class IdeaRequest(BaseModel):
     idea: str
-    model: str = "gemini-2.5-flash-lite"
+    model: str = os.environ.get("DEFAULT_MODEL", "gemini-2.5-flash-lite")
     overrides: dict = {}
     deep_research_enabled: bool = False
-    deep_research_model: str = "deep-research-pro-preview-12-2025"
+    deep_research_model: str = os.environ.get("DEFAULT_DEEP_RESEARCH_MODEL", "deep-research-pro-preview-12-2025")
     webhook_url: str = ""      # optional: POST results here when job completes
 
 
 class KeywordsRequest(BaseModel):
     keywords: str
-    model: str = "gemini-2.5-flash-lite"
+    model: str = os.environ.get("DEFAULT_MODEL", "gemini-2.5-flash-lite")
 
 
 class LoginRequest(BaseModel):
@@ -657,7 +657,7 @@ def api_rerun_evaluation(
     if not record:
         raise HTTPException(status_code=404, detail="Evaluation not found")
 
-    new_model = body.get("model", record.model_used or "gemini-2.5-flash-lite")
+    new_model = body.get("model", record.model_used or os.environ.get("DEFAULT_MODEL", "gemini-2.5-flash-lite"))
     overrides = body.get("overrides", {})
     webhook_url = body.get("webhook_url", "")
     user_id = get_user_id_from_token(token_payload)
@@ -819,7 +819,7 @@ def api_retry_from_stage(
         raise HTTPException(status_code=404, detail="Original job not found.")
 
     from_stage = int(body.get("from_stage", 1))
-    new_model = body.get("model") or original_job.model_used or "gemini-2.5-flash-lite"
+    new_model = body.get("model") or original_job.model_used or os.environ.get("DEFAULT_MODEL", "gemini-2.5-flash-lite")
     overrides = body.get("overrides", {})
     webhook_url = body.get("webhook_url", "")
     user_id = get_user_id_from_token(token_payload)

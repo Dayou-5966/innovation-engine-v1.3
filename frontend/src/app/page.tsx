@@ -14,9 +14,9 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentView, setCurrentView] = useState<"genesis" | "evaluation" | "portfolio" | "guide">("genesis");
   const [seedConcept, setSeedConcept] = useState<string | null>(null);
-  const [aiModel, setAiModel] = useState<string>("gemini-2.5-flash-lite");
+  const [aiModel, setAiModel] = useState<string>(process.env.NEXT_PUBLIC_DEFAULT_AI_MODEL || "gemini-2.5-flash-lite");
   const [deepResearchEnabled, setDeepResearchEnabled] = useState<boolean>(false);
-  const [deepResearchModel, setDeepResearchModel] = useState<string>("deep-research-pro-preview-12-2025");
+  const [deepResearchModel, setDeepResearchModel] = useState<string>(process.env.NEXT_PUBLIC_DEFAULT_DEEP_RESEARCH_MODEL || "deep-research-pro-preview-12-2025");
   const [mandateDocs, setMandateDocs] = useState<{ filename: string }[]>([]);
 
   const [password, setPassword] = useState("");

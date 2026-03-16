@@ -7,7 +7,11 @@ load_dotenv()
 os.environ["GEMINI_API_KEY"] = os.environ.get("GEMINI_API_KEY", "dummy_gemini_key")
 
 
-def generate_concepts(keywords: str, model_name: str = "gemini-2.5-flash-lite") -> list:
+import os
+
+def generate_concepts(keywords: str, model_name: str = None) -> list:
+    if model_name is None:
+        model_name = os.environ.get("DEFAULT_MODEL", "gemini-2.5-flash-lite")
     """Generate 3 business concepts grounded in live web search.
     
     Uses the raw HTTP _call() from engine.py (not the Python SDK) to avoid
@@ -46,6 +50,7 @@ DO NOT include markdown formatting like ```json. Output raw JSON ONLY."""
 
     MAX_RETRIES = 5
     RETRY_DELAY = 6  # seconds
+    last_exc = RuntimeError("No generation attempts made")
 
     for attempt in range(1, MAX_RETRIES + 1):
         try:
@@ -76,10 +81,24 @@ DO NOT include markdown formatting like ```json. Output raw JSON ONLY."""
                 output_str = output_str[:-3]
 
             parsed = json.loads(output_str.strip())
+            
+            # Normalize: If LLM wrapped it in a dict (e.g. {"concepts": [...]}), extract the list.
+            if isinstance(parsed, dict):
+                p_dict = dict(parsed)  # Safe copy for type checker
+                for key in ["concepts", "data", "business_concepts", "ideas"]:
+                    val = p_dict.get(key)
+                    if isinstance(val, list):
+                        parsed = val
+                        break
+            
+            if not isinstance(parsed, list):
+                raise ValueError(f"JSON parsed to {type(parsed)}, expected a list.")
+
             print(f"[Genesis] Generated {len(parsed)} concepts on attempt {attempt}")
             return parsed
 
         except Exception as e:
+            last_exc = e
             err_str = str(e)
             print(f"[Genesis] Attempt {attempt}/{MAX_RETRIES} failed: {err_str}")
             if attempt < MAX_RETRIES:
@@ -87,23 +106,7 @@ DO NOT include markdown formatting like ```json. Output raw JSON ONLY."""
                 print(f"[Genesis] Retrying in {wait}s...")
                 time.sleep(wait)
             else:
-                print("[Genesis] All retries exhausted. Serving fallback concepts.")
+                print("[Genesis] All retries exhausted. Throwing error.")
 
-    # All retries exhausted — return clearly-marked fallback
-    return [
-        {
-            "id": 1,
-            "title": f"[AI Unavailable] {keywords[:20]} Venture Alpha",
-            "description": f"The AI model is temporarily overloaded. Please try again in a minute. This is a placeholder for a concept around: {keywords}."
-        },
-        {
-            "id": 2,
-            "title": "[AI Unavailable] Platform Beta",
-            "description": "The AI model is under high demand. Retry shortly for real AI-generated concepts grounded in live market research."
-        },
-        {
-            "id": 3,
-            "title": "[AI Unavailable] Gamma Initiative",
-            "description": "Gemini 2.5 Pro is temporarily unavailable. Your keywords have been saved — just hit Generate again in a moment."
-        }
-    ]
+    # All retries exhausted — throw the actual error to main.py
+    raise last_exc

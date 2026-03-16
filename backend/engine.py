@@ -1,29 +1,40 @@
 import os
 import json
 import numpy as np
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-def monte_carlo_simulation(base_value: float, iterations: int) -> str:
+def monte_carlo_simulation(base_value: float, iterations: int, volatility_scale: float, risk_threshold: float) -> str:
     """Runs a Monte Carlo simulation for financial risk analysis."""
-    returns = np.random.normal(loc=1.05, scale=0.15, size=(int(iterations), 5))
+    returns = np.random.normal(loc=1.05, scale=float(volatility_scale), size=(int(iterations), 5))
     portfolio = float(base_value) * np.cumprod(returns, axis=1)  # type: ignore
     final_values = portfolio[:, -1]  # type: ignore
     var_95 = np.percentile(final_values, 5)
     median_val = np.median(final_values)
+    
+    # Generate 50-bin histogram data for frontend Recharts
+    counts, bin_edges = np.histogram(final_values, bins=50)
+    total_runs = len(final_values)
+    histogram_data = [
+        {"value": round(float(bin_edges[i]), 2), "probability": round(float(counts[i] / total_runs) * 100, 2)}
+        for i in range(len(counts))
+    ]
+
     return json.dumps({
         "5th_Percentile_Value": round(float(var_95), 2),
         "Median_Value": round(float(median_val), 2),
-        "Risk_Assessment": "High Risk" if var_95 < float(base_value) * 0.8 else "Acceptable Risk"
+        "Risk_Assessment": "High Risk" if var_95 < float(base_value) * float(risk_threshold) else "Acceptable Risk",
+        "Histogram": histogram_data
     })
 
 
 import typing
 
 def _call(client, model: str, prompt: typing.Any, temperature: float = 0.3, tools=None,
-          max_retries: int = 5, retry_delay: float = 6.0) -> str:
+          max_retries: int = 5, retry_delay: float = 6.0, progress_callback=None, response_mime_type: str = None) -> str:
     """Blocking generate_content call using direct HTTP requests to bypass Python 3.9 httpx deadlocks."""
     import time as _time
     import os
@@ -46,16 +57,22 @@ def _call(client, model: str, prompt: typing.Any, temperature: float = 0.3, tool
 
     payload = {
         "contents": [{"parts": parts}],
-        "generationConfig": {"temperature": temperature}
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": 8192
+        }
     }
+    
+    if response_mime_type:
+        payload["generationConfig"]["responseMimeType"] = response_mime_type
     
     # Only add Google Search tool if an actual tool object is provided (not None)
     if tools and any(t is not None for t in tools):
         payload["tools"] = [{"googleSearch": {}}]
 
-    # Use longer timeout for thinking models (pro/latest) which do internal chain-of-thought
-    is_thinking = any(x in model for x in ["pro", "latest"])
-    timeout = 300 if is_thinking else 120
+    # Use longer timeout for heavy reasoning models (pro/latest/thinking)
+    is_thinking = any(x in model.lower() for x in ["pro", "latest", "thinking"])
+    timeout = 400 if is_thinking else 180
 
     # Log call parameters for debugging
     prompt_size = sum(len(p.get("text", "")) for p in parts)
@@ -89,6 +106,32 @@ def _call(client, model: str, prompt: typing.Any, temperature: float = 0.3, tool
             resp_parts = candidates[0].get("content", {}).get("parts", [])
             text = "".join([p.get("text", "") for p in resp_parts]).strip()
             
+            # --- EXTRACT SEARCH TRACE TELEMETRY ---
+            grounding = candidates[0].get("groundingMetadata", {})
+            if grounding:
+                web_retrieval = grounding.get("webSearchQueries", [])
+                chunks = grounding.get("groundingChunks", [])
+                urls = []
+                for chunk in chunks:
+                    web_info = chunk.get("web", {})
+                    if "uri" in web_info:
+                        urls.append(web_info["uri"])
+                        
+                # Only emit if actual web search was performed
+                if web_retrieval or urls:
+                    import itertools
+                    from typing import List
+                    safe_queries: List[str] = [str(q) for q in web_retrieval]
+                    safe_urls: List[str] = list(str(u) for u in dict.fromkeys(urls))
+                    
+                    trace_payload = {
+                        "queries": safe_queries,
+                        "urls": list(itertools.islice(safe_urls, 10))
+                    }
+                    print(f"[Engine] Search Trace captured: {len(safe_queries)} queries, {len(safe_urls)} URLs")
+                    if progress_callback:
+                        progress_callback("search_trace", trace_payload)
+            
             if not text:
                 print(f"[Engine] DEBUG raw candidate payload: {json.dumps(candidates[0])}")
                 raise ValueError(f"Model returned empty text (finishReason={finish_reason}, attempt {attempt})")
@@ -105,6 +148,12 @@ def _call(client, model: str, prompt: typing.Any, temperature: float = 0.3, tool
 
     print(f"[Engine] _call: ALL {max_retries} ATTEMPTS EXHAUSTED for model={model}")
     raise last_exc
+
+
+def _run_search(query: str, client, model: str, tools=None, progress_callback=None) -> str:
+    """Helper to explicitly run a search via the model."""
+    prompt = f"Please search the web for the following query and provide a factual summary: {query}"
+    return _call(client, model, prompt, tools=tools, progress_callback=progress_callback)
 
 
 def _run_deep_research(api_key: str, topic: str, model: str, progress_callback=None, stage_name="stageX", start_prog=10, end_prog=40) -> str:
@@ -163,15 +212,27 @@ def _run_deep_research(api_key: str, topic: str, model: str, progress_callback=N
                     
                     # Extract final response (handling potential nesting)
                     resp_obj = state.get("response", {})
+                    final_text = ""
                     if hasattr(resp_obj, "get"):
                         if "text" in resp_obj:
-                            return resp_obj["text"]
-                        
-                        if "parts" in resp_obj and isinstance(resp_obj["parts"], list):
+                            final_text = resp_obj["text"]
+                        elif "parts" in resp_obj and isinstance(resp_obj["parts"], list):
                             parts = resp_obj["parts"]
-                            return "".join([p.get("text", "") for p in parts if isinstance(p, dict)])
-                            
-                    return json.dumps(resp_obj) # Fallback if structure changes
+                            final_text = "".join([p.get("text", "") for p in parts if isinstance(p, dict)])
+                    if not final_text:
+                        final_text = json.dumps(resp_obj) # Fallback if structure changes
+
+                    # Cache persistence for background runs
+                    try:
+                        import hashlib, os
+                        os.makedirs("data/research_cache", exist_ok=True)
+                        h = hashlib.md5(topic.encode()).hexdigest()
+                        with open(f"data/research_cache/{h}.json", "w") as f:
+                            json.dump({"topic": topic, "result": final_text}, f)
+                    except Exception as ce:
+                        print(f"[Engine] Cache write failed: {ce}")
+
+                    return final_text
                     
                 elif status == "failed":
                     raise ValueError(f"Interaction failed. Error: {state.get('error', 'Unknown')}")
@@ -192,19 +253,24 @@ import typing
 
 def evaluate_idea(
     idea: str,
-    model_name: str = "gemini-2.5-flash-lite",
+    model_name: str = None,
     mandate_docs: typing.Optional[list] = None,
     overrides: typing.Optional[dict] = None,
     progress_callback: typing.Optional[typing.Callable[[str, typing.Any], None]] = None,
     check_cancelled: typing.Optional[typing.Callable[[], bool]] = None,
     deep_research_enabled: bool = False,
-    deep_research_model: str = "deep-research-pro-preview-12-2025",
+    deep_research_model: str = None,
     # ── Stage retry: supply pre-computed outputs to skip already-done stages ──
     resume_from_stage: int = 1,          # 1=run all, 2=skip stage1, 3=skip 1+2, 4=skip 1+2+3
     precomputed_stage1: str = "",        # stage1_brief text
     precomputed_stage2: str = "",        # stage2_report text
     precomputed_stage3: str = "",        # stage3_report text
 ) -> dict:
+    if model_name is None:
+        model_name = os.environ.get("DEFAULT_MODEL", "gemini-2.5-flash-lite")
+    if deep_research_model is None:
+        deep_research_model = os.environ.get("DEFAULT_DEEP_RESEARCH_MODEL", "deep-research-pro-preview-12-2025")
+        
     api_key = os.environ.get("GEMINI_API_KEY", "")
     mandate_docs = mandate_docs or []
     overrides = overrides or {}
@@ -226,6 +292,7 @@ def evaluate_idea(
 
     uploaded_files = []
     temp_files = []
+    logic_trace = []
 
     try:
         # NOTE: We do NOT import google.genai or create genai.Client globally here.
@@ -281,7 +348,7 @@ IDEA TO EVALUATE:
 "{idea}"
 
 Your task: Produce a comprehensive Strategic Brief covering ALL of the following.
-Be specific, analytical, and evidence-based. Minimum 600 words total.
+Be specific, analytical, and evidence-based. A comprehensive report that is as long as necessary to be bulletproof, prioritizing density over length.
 
 SYNTHESIS REQUIREMENT: Do not simply summarize search results. You must actively synthesize the facts you find with your own deep strategic reasoning, drawing logical conclusions, identifying hidden risks, and extrapolating market trajectories. Add your own expert "AI perspective" linking the raw data to the objective.
 
@@ -326,24 +393,13 @@ You have access to Google Search. You MUST use it aggressively for this analysis
 5. STRATEGIC ALIGNMENT SCORE (out of 10)
    - Provide a numeric score and a 2-sentence justification referencing your analysis above.
 
-6. STRATEGIC SIGNPOSTS & LIVE SIGNALS
-   Use Google Search NOW to find the most recent developments (2024-2026 only).
-   Do NOT rely on training data for this section — every item must come from a live web search.
-
-   A. CURRENT STRATEGIC SIGNALS (3-5 items):
-      Search for real events happening RIGHT NOW that are relevant to this idea.
-      Each signal must be a specific, dated event you found via search — not general knowledge.
-      Format: "[Signal description — exact date] [Source: URL]"
-      Include: regulatory announcements, competitor moves, technology milestones, funding events,
-      policy changes, market data releases, or industry conference announcements.
-
-   B. STRATEGIC SIGNPOSTS (3-5 future milestones):
-      Based on your search findings, identify future events that would materially change viability:
-   - For each signpost provide:
-   - Milestone: A specific, observable future event (e.g. "EU passes offshore hydrogen mandate", "Electrolyzer CapEx drops below $400/kW")
-   - If_It_Happens: What it means for this idea (bullish or bearish impact, 1 sentence)
-   - Watch_By: Estimated timeframe (Q1 2026, H2 2027, etc.)
-   - Tracking_Source: Where to monitor this (specific regulator, publication, index) [Source: URL]
+REPORT FORMAT REQUIREMENT:
+You must strictly organize your report into the following exact sections:
+### 1. Inputs: (what data you looked at)
+### 2. Assumptions: (what strategic assumptions you are making)
+### 3. Methodologies: (how you approached the alignment analysis)
+### 4. Limitations: (what data is missing or what you cannot know)
+### 5. Outputs & Recommendations: (your final strategic verdict)
 
 Output your full Strategic Brief as plain text (no JSON, no markdown headers).
 """
@@ -361,7 +417,7 @@ Output your full Strategic Brief as plain text (no JSON, no markdown headers).
             full_prompt = stage1_prompt
             try:
                 import requests
-                stage1_brief = _call(None, PRO, full_prompt, temperature=0.2, tools=search_tool)
+                stage1_brief = _call(None, PRO, full_prompt, temperature=0.2, tools=search_tool, progress_callback=progress_callback)
             except (requests.exceptions.RequestException, ValueError, TimeoutError) as api_err:
                 print(f"[Engine] Stage 1 AI Engine failure: {api_err}")
                 raise ConnectionError("AI Engine cannot be accessed. There is a connection issue.") from api_err
@@ -371,9 +427,60 @@ Output your full Strategic Brief as plain text (no JSON, no markdown headers).
 
             progress_callback("progress", 100)
             progress_callback("stage1", {"brief": stage1_brief, "model": PRO})
+            
+            decision = "PASS" if "PASS" in stage1_brief else ("VETO" if "VETO" in stage1_brief else "Evaluated")
+            logic_trace.append(f"Strategist issued a {decision} verdict based on mandate alignment.")
+            progress_callback("logic_trace", logic_trace)
 
         if check_cancelled():
             raise InterruptedError("Evaluation cancelled by user after Stage 1")
+
+        # ─────────────────────────────────────────────────────────────────────
+        # STAGE 1.75 — THE SIGNAL SCRAPER  (AI Engine: {FLASH})
+        # ─────────────────────────────────────────────────────────────────────
+        stage1_75_prompt = f"""You are a specialized Financial Signal Scraper.
+Your ONLY job is to search the live web for specific, real-world events that validate or threaten the following idea.
+IDEA: "{idea}"
+MANDATE BRIEF:
+{str(stage1_brief)[:2000]}
+
+CRITICAL RULES:
+1. Every single signal MUST be a real, verifiable event from the last 6 months.
+2. Every item MUST include an exact date (Month Year) and a specific URL source.
+3. DO NOT output generic trends or theoretical possibilities. We need actual occurrences (e.g., funding rounds, bankruptcies, regulatory passes).
+4. If you cannot find a real event via search for a category, state "[No recent signal found via web search]". Do NOT hallucinate.
+5. SOURCE VARIETY: Pull from at least 3 distinct domains across your findings (e.g., 1 News publication, 1 Government/Regulatory site, 1 Community/Industry forum).
+
+Search the web NOW and output the following sections in plain text:
+
+A. BULLISH SIGNALS (3-5 items): Real, observable events happening NOW that support this idea.
+   Format: "[Signal description — exact date] [Source: URL]"
+
+B. BEARISH SIGNALS (3-5 items): Real, observable events happening NOW that threaten this idea.
+   Format: "[Signal description — exact date] [Source: URL]"
+
+C. STRATEGIC SIGNPOSTS (3-5 items): Future milestones that would confirm or kill the commercial thesis.
+   Format:
+   - Milestone: The specific triggering event to watch
+   - Bull_Case: What it means if it happens (1 sentence)
+   - Bear_Case: What it means if it does NOT happen by deadline (1 sentence)
+   - Watch_By: Timeframe (e.g. Q3 2026)
+   - Tracking_Source: Where to monitor this (specific regulator, publication, index) [Source: URL]
+"""
+        try:
+            print("[Engine] Stage 1.75: Signal Scraper running...")
+            progress_callback("status", "stage1_75")
+            progress_callback("progress", 0)
+            stage1_75_signals = _call(None, FLASH, stage1_75_prompt, temperature=0.2, tools=search_tool)
+        except Exception as e:
+            print(f"[Engine] Stage 1.75 Scraper failed: {e}")
+            stage1_75_signals = "[Scraper failed to run]"
+        
+        progress_callback("stage1_75", {"signals": stage1_75_signals, "model": FLASH})
+        progress_callback("progress", 25)
+
+        if check_cancelled():
+            raise InterruptedError("Evaluation cancelled by user after Stage 1.75")
 
         # ─────────────────────────────────────────────────────────────────────
         # STAGE 2 — MARKET SCANNER + IP SPECIALIST  (AI Engine: {PRO})
@@ -391,7 +498,7 @@ IDEA:
 Produce a detailed Market & IP Intelligence Report covering ALL of the following.
 Use Google Search actively to find current data — search for recent funding rounds, market reports,
 latest patent filings, and news about competitors. Do NOT rely solely on training knowledge.
-Minimum 700 words.
+A comprehensive report that is as long as necessary to be bulletproof, prioritizing density over length.
 
 SYNTHESIS REQUIREMENT: You are an expert analyst. Do not just list facts from search. You must critically evaluate the data, synthesize it with your own market intuition, and explain *why* these facts matter for the idea's chance of success. Your deep AI reasoning must bind the search data together into a cohesive strategic narrative.
 
@@ -411,6 +518,10 @@ Do NOT write from memory first and search later — search FIRST, then write bas
 - ANTI-FABRICATION: Never invent competitor names, funding amounts, patent numbers, or market sizes.
   If you can only find 3 real competitors via search, list 3 — do NOT pad with made-up companies.
 
+MANAGER CONSTRAINTS (MANDATORY):
+1. Quantitative Proof Requirement: Every claim in the Economic Logic / Market Sizing section must include at least one specific dollar value or percentage found in the source data.
+2. The "Anti-Hallucination" Check: If you fail to find data on a specific entity's revenue or key metric, the report must state [Data Gap Identified] and MUST output a specific "Search Strategy" instruction explaining exactly how a human analyst should query databases (e.g., Pitchbook, Capital IQ, local registries) to find this missing data. Do not let the gap be a dead end.
+
 1. MARKET SIZING (Market Intelligence Analyst)
    - Search for the most recent market research reports on this sector.
    - Total Addressable Market (TAM): Specific dollar figure with methodology (top-down or bottom-up).
@@ -418,6 +529,7 @@ Do NOT write from memory first and search later — search FIRST, then write bas
    - Serviceable Addressable Market (SAM): Specific dollar figure for the realistic segment this idea
      can capture in years 1-5. [Source: required]
    - Serviceable Obtainable Market (SOM): Realistic market share target in year 3, with justification.
+   - INVESTIGATE THIS SPECIFIC STRUCTURAL BARRIER (RESEARCHER DIRECTIVE): [[RESEARCHER_DIRECTIVE]]
 
 2. COMPETITIVE LANDSCAPE (Market Intelligence Analyst)
    - Search the web for the latest news on competitors and adjacent players.
@@ -441,17 +553,26 @@ Do NOT write from memory first and search later — search FIRST, then write bas
    - Estimated timeline to MVP and to commercial scale
 
 5. IP LANDSCAPE (IP Specialist)
-   - Search Google Patents or recent filings for relevant patent families.
+   - You MUST explicitly search patents.google.com and worldwide.espacenet.com for relevant patent families.
    - List 3-5 specific patent families, patent numbers, or prior art areas [Source: required]
+   - "White Space" Mandate: Explicitly identify "White Space Areas" — domains where your active search yielded no direct patent coverage — and explain why these gaps present a strategic opportunity for the overarching mandate.
+   - At the VERY END of this IP Landscape section, you MUST output a raw JSON block containing exactly the following schema. Use EXACTLY these keys. No markdown fences.
+```json
+{{
+  "white_space_coordinates": [
+    {{ "label": "Specific Unpatented Application", "x_axis_tech_complexity": 75, "y_axis_market_saturation": 20 }}
+  ]
+}}
+```
    - Key patent holders and their strategic relevance
    - Freedom-to-operate assessment: low/medium/high risk of infringement
-   - Most promising IP filing opportunity for this idea (specific claim area)
 
 6. LIVE SIGNALS & SIGNPOSTS
    CRITICAL: Use Google Search RIGHT NOW for this entire section. Every single item below
    MUST come from a LIVE web search result — not from your training data or general knowledge.
    Search for the most recent information available (2024-2026 only).
    CITE EVERY ITEM WITH [Source: URL — date accessed/published].
+   INVESTIGATE THIS SPECIFIC FRICTION POINT (SCOUT DIRECTIVE): [[SCOUT_DIRECTIVE]]
 
    A. BULLISH SIGNALS (3-5 items): Real, observable events happening NOW that support this idea.
       Search for: recent funding rounds in the space, regulatory tailwinds, major player acquisitions,
@@ -480,7 +601,7 @@ Output your full Market & IP Intelligence Report as plain text (no JSON).
 """
         if progress_callback:
             progress_callback("status", "stage2")
-            progress_callback("progress", 0)
+            progress_callback("progress", 25)
             
         if overrides.get("stage2"):
             stage2_prompt += f"\n\n=== USER OVERRIDE DIRECTIVE ===\nThe user has provided the following explicit instructions for your market research. You MUST prioritize this directive over standard rules if they conflict:\n{overrides['stage2']}\n===============================\n"
@@ -491,28 +612,202 @@ Output your full Market & IP Intelligence Report as plain text (no JSON).
             progress_callback("progress", 100)
             progress_callback("stage2", {"report": stage2_report, "model": PRO, "skipped": True})
         else:
+            # ── Stage 1.5: The Ruthless Interrogator (Orchestration Pre-Pass) ──
+            progress_callback("progress", 30)
+            print("[Engine] Stage 1.5: The Ruthless Interrogator generating Research Directives...")
+            scout_directive = "Find real-time financial friction (e.g., insurance rates, labor costs, recent bankruptcies in the sector)."
+            researcher_directive = "Find structural barriers (e.g., specific patent numbers, regulatory temp deltas, or LCOE floor prices)."
+            
+            interrogator_prompt = f"""You are the Lead Market Intelligence Manager. For every business idea, you must NOT use generic questions. Instead, follow this protocol:
+1. Identify Vulnerabilities: Find the 3 most dangerous assumptions in the user's idea.
+2. Task the Scout (Google Search): Draft a directive that explicitly searches for NEGATIVE signals and real-time financial friction (e.g., insurance rates, labor costs, recent bankruptcies).
+3. Task the Researcher (Deep Research / Fallback Web Search): Draft a directive to find structural barriers (e.g., specific patent numbers, regulatory temp deltas, or LCOE floor prices).
+4. Verification Rule: Every agent task must ask for at least one specific number or date.
+5. Search for the Opposite (Disconfirming Evidence): The `scout_directive` MUST explicitly instruct the scout to find evidence that contradicts or threatens the idea's core assumptions, avoiding confirmation bias.
+
+IDEA: "{idea}"
+MANDATE BRIEF:
+{stage1_brief[:2000]}
+
+You MUST output ONLY a valid JSON object matching this exact schema:
+{{
+  "top_vulnerabilities": ["Vulnerability 1", "Vulnerability 2", "Vulnerability 3"],
+  "scout_directive": "Specific instructions for the live web scout to find disconfirming evidence...",
+  "researcher_directive": "Specific instructions for the structural researcher..."
+}}
+DO NOT include markdown formatting like ```json. Output raw JSON ONLY.
+"""
+            try:
+                interrogator_raw = _call(None, FLASH, interrogator_prompt, temperature=0.2)
+                
+                # Clean up markdown fences if present
+                clean_json = interrogator_raw.strip()
+                if clean_json.startswith("```json"):
+                    clean_json = clean_json[7:]
+                if clean_json.startswith("```"):
+                    clean_json = clean_json[3:]
+                if clean_json.endswith("```"):
+                    clean_json = clean_json[:-3]
+                    
+                import json
+                directives = json.loads(clean_json.strip())
+                scout_directive = directives.get("scout_directive", scout_directive)
+                researcher_directive = directives.get("researcher_directive", researcher_directive)
+                vulnerabilities_list = directives.get("top_vulnerabilities", ["No specific vulnerabilities identified."])
+                
+                if isinstance(vulnerabilities_list, list):
+                    formatted_vulnerabilities = "\n".join([f"- {v}" for v in vulnerabilities_list])
+                else:
+                    formatted_vulnerabilities = str(vulnerabilities_list)
+                    
+                print(f"[Engine] Stage 1.5 Interrogator Success. Scout: {len(scout_directive)} chars | Researcher: {len(researcher_directive)} chars")
+                
+                logic_trace.append(f"Interrogator identified {len(vulnerabilities_list)} critical vulnerabilities to stress-test.")
+                progress_callback("logic_trace", logic_trace)
+                
+                if progress_callback:
+                    progress_callback("stage1_5", {
+                        "top_vulnerabilities": vulnerabilities_list,
+                        "scout_directive": scout_directive,
+                        "researcher_directive": researcher_directive
+                    })
+                    
+            except Exception as e:
+                print(f"[Engine] Stage 1.5 Interrogator failed ({e}). Falling back to default directives.")
+                formatted_vulnerabilities = "- No specific vulnerabilities identified (Fallback)"
+            
+            progress_callback("progress", 50)
+
             # ── Stage 2 Pre-Pass: Deep Research ──
-            dr2_topic = f"Perform a ruthless technical IP and market audit for: '{idea}'. Extract exact TAM/SAM sizes, fundings for top 5 competitors, and 3-5 specific patent family numbers related to this technology."
+            dr2_topic = f"Perform a ruthless technical IP and market audit for: '{idea}'. Extract exact TAM/SAM sizes, fundings for top 5 competitors. For the IP landscape, you MUST explicitly search patents.google.com and worldwide.espacenet.com to extract 3-5 specific patent family numbers related to this technology. INTERROGATOR DIRECTIVE: {researcher_directive}"
             if deep_research_enabled:
                 stage2_dr_data = _run_deep_research(api_key, dr2_topic, deep_research_model, progress_callback, "Stage 2", 50, 80)
             else:
                 progress_callback("progress", 80)
                 print("[Engine] Stage 2: Deep Research disabled by user.")
-                stage2_dr_data = "(Deep Research explicitly disabled by user. Proceeding with standard web search capability during synthesis phase.)"
+                stage2_dr_data = f"(Deep Research explicitly disabled by user. Proceeding with standard web search capability during synthesis phase. YOU MUST EXECUTE THIS RESEARCHER DIRECTIVE VIA GOOGLE SEARCH INSTEAD: {researcher_directive})"
             
             stage2_prompt_with_dr = f"""{stage2_prompt}
 
-=== DEEP RESEARCH FACTUAL REPORT ===
-The following raw data has been autonomously extracted by the Deep Research agent.
-Treat this data as highly verified ground truth. Format and synthesize it into your final output.
+=== INTELLIGENCE TEAMS AND DATA SOURCES ===
+You are the Lead Market Intelligence Manager. You are receiving data from two autonomous field agents:
+1. THE SCOUT (Live Signals): You generated these signals just now via your live Google Search tools. They represent real-time pricing, recent news, and immediate competitive pivots.
+2. THE SIGNAL SCRAPER (Stage 1.75): This agent has already scoured the web and found the following recent, verifiable financial signals:
+{stage1_75_signals}
+3. THE STRUCTURAL RESEARCHER (Deep Research): The report below contains comprehensive TAM/SAM/SOM market sizes, regulatory frameworks, and academic IP analysis gathered via a slow, structural search.
+
+Your objective is to Synthesize and Verify this intelligence into a cohesive Market Report.
+
+CRITICAL CONFLICT RESOLUTION DIRECTIVE:
+You must cross-reference your live Scout signals and the Signal Scraper findings against the structural Deep Research data below.
+
+=== THE 3 MOST DANGEROUS ASSUMPTIONS (VULNERABILITIES) ===
+The Interrogator has identified the following top vulnerabilities in this idea:
+[[TOP_VULNERABILITIES]]
+You MUST actively address and scrutinize these assumptions in your final report.
+
+MANAGER CONSTRAINTS (MANDATORY):
+1. Quantitative Proof Requirement: Every claim in the Economic Logic / Market Sizing section must include at least one specific dollar value or percentage found in the source data. No vague "large market" descriptors allowed.
+2. The "Anti-Hallucination" Check: If the Scout and Researcher both fail to find data on a specific competitor's revenue, the report must state [Data Gap Identified] instead of making an estimate. If a [Data Gap Identified] occurs in a critical area (like Competitor Revenue), the Manager must provide a specific 'Search Instruction' for a human analyst to follow up on later.
+3. The Pivot Signal: If the Scout detects a competitor using a different tech stack or strategy than the Researcher reported, prioritize the Scout's tech stack for the Stress-Test section.
+4. Conflict highlighting: If the Deep Research data indicates a competitor is well-funded, but the live Scout signal shows they recently pivoted or laid off staff, you MUST highlight this discrepancy in a bold [Live Conflict Detected] block.
+5. Iterative Tool Calls: You MUST NOT attempt to gather all live signals in a single tool call. You must iteratively search, synthesize, and then search again for the next section to ensure equal data density across all six chapters.
+
+=== DEEP RESEARCH FACTUAL REPORT (The Structural Researcher) ===
+The following raw data has been autonomously extracted. Treat this data as verified ground truth unless your live Scout search directly contradicts it.
 {stage2_dr_data}
 === END DEEP RESEARCH REPORT ===
 """
+            # Inject Interrogator directives dynamically
+            stage2_prompt_with_dr = stage2_prompt_with_dr.replace("[[SCOUT_DIRECTIVE]]", scout_directive)
+            stage2_prompt_with_dr = stage2_prompt_with_dr.replace("[[RESEARCHER_DIRECTIVE]]", researcher_directive)
+            stage2_prompt_with_dr = stage2_prompt_with_dr.replace("[[TOP_VULNERABILITIES]]", formatted_vulnerabilities)
+
             print("[Engine] Stage 2: Market Scanner + IP running (Synthesis)...")
             progress_callback("progress", 85)
             stage2_report = _call(None, PRO, stage2_prompt_with_dr, temperature=0.2, tools=search_tool)
             progress_callback("progress", 100)
             progress_callback("stage2", {"report": stage2_report, "model": PRO})
+            
+            if "[Live Conflict Detected]" in stage2_report:
+                logic_trace.append("Analyst identified a [Live Conflict Detected] regarding competitor viability.")
+                progress_callback("logic_trace", logic_trace)
+                
+                # --- PROACTIVE UPGRADE: THE ADVERSARIAL DUEL ---
+                duel_str = "\n⚖️ **THE ADVERSARIAL DUEL: SCOUT vs. RESEARCHER** ⚖️\n"
+                logic_trace.append(duel_str.strip())
+                if progress_callback: progress_callback("logic_trace", logic_trace)
+                
+                # Turn 1: Scout challenges the Structural Researcher
+                t1_prompt = f"You are the SCOUT. Based on the conflict in the report below, attack the Deep Research structural assumption in 2 punchy sentences. REPORT: {stage2_report[-2500:]}"
+                scout_attack = _call(None, FLASH, t1_prompt, temperature=0.6)
+                duel_str += f"\n**Scout:** {scout_attack}\n"
+                logic_trace.append(f"Scout: {scout_attack}")
+                if progress_callback: progress_callback("logic_trace", logic_trace)
+                
+                # Turn 2: Researcher defends
+                t2_prompt = f"You are the RESEARCHER. Defend your structural data against the Scout's attack in 2 punchy sentences. SCOUT ATTACK: {scout_attack}. REPORT: {stage2_report[-2500:]}"
+                researcher_defense = _call(None, FLASH, t2_prompt, temperature=0.5)
+                duel_str += f"\n**Researcher:** {researcher_defense}\n"
+                logic_trace.append(f"Researcher: {researcher_defense}")
+                if progress_callback: progress_callback("logic_trace", logic_trace)
+                
+                # Turn 3: Manager synthesizes consensus
+                t3_prompt = f"You are the MANAGER. Resolve this dispute and establish a hard consensus on the core truth in 2 punchy sentences. SCOUT: {scout_attack}. RESEARCHER: {researcher_defense}."
+                consensus_resolution = _call(None, FLASH, t3_prompt, temperature=0.2)
+                duel_str += f"\n**Consensus:** {consensus_resolution}\n\n"
+                logic_trace.append(f"Consensus: {consensus_resolution}")
+                if progress_callback: progress_callback("logic_trace", logic_trace)
+                
+                # Inject the duel back into the final report so the UI tabs catch it
+                stage2_report += duel_str
+                
+            elif "[Data Gap Identified]" in stage2_report:
+                logic_trace.append("Analyst flagged a [Data Gap Identified]; generating human search strategy.")
+            else:
+                logic_trace.append("Analyst successfully cross-referenced structural data with live scout signals.")
+            progress_callback("logic_trace", logic_trace)
+            
+            # Extract White Space Map Coordinates
+            ip_white_space_data = None
+            try:
+                import re
+                match = re.search(r'```json\s*({.*?"white_space_coordinates".*?})\s*```', stage2_report, re.DOTALL)
+                if match:
+                    white_space_json = json.loads(match.group(1))
+                    ip_white_space_data = white_space_json.get("white_space_coordinates")
+                    logic_trace.append(f"IP Specialist identified {len(ip_white_space_data)} generative white space domains.")
+                    # Strip the JSON from the markdown report so it doesn't render ugly in the UI tab
+                    stage2_report = stage2_report.replace(match.group(0), "")
+                else: logic_trace.append("IP Specialist did not return strict JSON white space map.")
+            except Exception as e:
+                logic_trace.append(f"Failed to parse White Space mapping: {e}")
+            if progress_callback: progress_callback("logic_trace", logic_trace)
+            
+        # --- PROACTIVE UPGRADE: STAGE 2.5 RE-INTERROGATION ---
+        # Detect "Black Swan" events via severity tags or conflict blocks
+        is_crisis = "[Live Conflict Detected]" in stage2_report and "CRITICAL" in stage2_report.upper()
+
+        if is_crisis:
+            logic_trace.append("🚨 CRITICAL CONFLICT: Black Swan event detected. Re-tasking Interrogator...")
+            if progress_callback:
+                progress_callback("logic_trace", logic_trace)
+            
+            # Generate a Pivot Directive based on the failure data
+            pivot_prompt = f"""You are the Lead Market Intelligence Manager.
+Stage 2 discovered a CRITICAL conflict that invalidates our initial assumptions.
+CONFLICT DATA: {stage2_report[:2000]}
+
+TASK: Generate a 'Pivot Directive' for the final synthesis. 
+What specific new question must the Synthesizer answer to see if the idea can be salvaged?
+"""
+            pivot_directive = _call(None, FLASH, pivot_prompt, temperature=0.1)
+            
+            # Inject this into the context for Stage 4
+            stage2_report += f"\n\n=== RECURSIVE PIVOT DIRECTIVE ===\n{pivot_directive}"
+            logic_trace.append("Pivot Directive issued. Final Synthesis will now focus on salvageability.")
+            if progress_callback:
+                progress_callback("logic_trace", logic_trace)
             
         if check_cancelled and check_cancelled():
             raise InterruptedError("Evaluation cancelled by user after Stage 2")
@@ -526,8 +821,6 @@ Treat this data as highly verified ground truth. Format and synthesize it into y
         _skip_stage3 = resume_from_stage > 3 and bool(precomputed_stage3)
         stage3_report = ""
         monte_carlo_result = "{}"
-
-        import requests
         
         tool_schema = {
             "functionDeclarations": [
@@ -541,9 +834,11 @@ Treat this data as highly verified ground truth. Format and synthesize it into y
                         "type": "OBJECT",
                         "properties": {
                             "base_value": {"type": "NUMBER", "description": "Base investment in USD"},
-                            "iterations": {"type": "INTEGER", "description": "Number of iterations (use 10000)"}
+                            "volatility_scale": {"type": "NUMBER", "description": "Standard deviation for returns (0.15 for SaaS, 0.40+ for Hardware)"},
+                            "iterations": {"type": "INTEGER", "description": "Number of iterations (use 10000)"},
+                            "risk_threshold": {"type": "NUMBER", "description": "Threshold multiplier for risk assessment (e.g., 0.95 for low risk appetite mandate, 0.80 for standard)"}
                         },
-                        "required": ["base_value", "iterations"]
+                        "required": ["base_value", "volatility_scale", "iterations", "risk_threshold"]
                     }
                 }
             ]
@@ -583,6 +878,10 @@ You have received the following context:
 {stage2_report[:4000]}
 === END ===
 
+=== LIVE FINANCIAL SIGNALS (Stage 1.75) ===
+{stage1_75_signals}
+=== END SIGNALS ===
+
 IDEA: \"{idea}\"
 
 === REAL-WORLD FINANCIAL BENCHMARKS (live web search — {len(benchmark_data)} chars) ===
@@ -614,6 +913,9 @@ You must build TWO separate financial models for comparison:
   MODEL B — FULL-SCALE COMMERCIAL OPERATION (Year 3-5+): The cost to deploy and operate at scale.
 Both models must have equally rigorous external data sourcing and benchmarking.
 Do NOT copy numbers between models — each must be independently justified with external sources.
+
+MACRO-SIGNAL ADJUSTMENT RULE:
+Review the LIVE FINANCIAL SIGNALS (Stage 1.75). If macro signals indicate high inflation or rising interest rates, you MUST increase your OPEX estimates by at least 10% and your NPV discount rate by at least 2% before calling the Monte Carlo tool.
 
 SYNTHESIS REQUIREMENT: The financial benchmarks provided are raw data. It is your job as an expert
 financial analyst to actively synthesize these numbers, discount them for risk, and model them into
@@ -701,10 +1003,17 @@ COMBINED METRICS (across both phases)
    | Team Size           | ___ people      | ___ people           |
    | Key Risk            | [describe]      | [describe]           |
 
-TASK B — MONTE CARLO SIMULATION:
-Call the monte_carlo_simulation_tool with:
-- base_value: Your TOTAL COMBINED CAPEX (Pilot + Full-Scale) from Task A above (in USD)
-- iterations: 10000
+TASK B — DYNAMIC MONTE CARLO:
+You must select a `volatility_scale` for the simulation based on the following risk anchors:
+* **SaaS / Pure Software:** 0.15 - 0.20
+* **Logistics / Physical Goods:** 0.25 - 0.35
+* **Deep Tech / SDCs / Hardware:** 0.40 - 0.55+
+
+If the **Stage 1.5 Vulnerabilities** mention 'Structural CapEx Risk' or 'Maintenance Complexity,' you **MUST** use a scale ≥ 0.40.
+Call `monte_carlo_simulation_tool` with:
+* `base_value`: Total Combined CAPEX
+* `volatility_scale`: [Your derived scale]
+* `iterations`: 10000
 
 TASK C — RISK SPECIALIST:
 After receiving Monte Carlo results, produce a Risk Intelligence Report:
@@ -723,6 +1032,27 @@ After receiving Monte Carlo results, produce a Risk Intelligence Report:
    - Mitigation Pathway: (2-3 specific actionable steps)
 
 Focus risks on: supply chain, regulatory/compliance, technology obsolescence, capital efficiency, talent.
+
+TASK D — SENSITIVITY MAPPING:
+After the Monte Carlo simulation, you MUST identify the **"Golden Lever"**.
+* **Analysis**: Which single input (e.g., CAPEX, Price per Unit, Maintenance Frequency) caused the most failures in the 5th percentile?
+* **The Delta**: Quantify the impact (e.g., "A 10% increase in [Variable] reduces IRR by 25%").
+* **Strategic Label**: Categorize the project's true nature (e.g., "This is a **High-OpEx Maintenance Play**").
+
+Output Format:
+### **The Critical Failure Lever**
+
+* **Primary Lever**: [e.g., Vessel Charter Rates]
+* **Sensitivity Delta**: [e.g., A 15% increase in this variable leads to a 40% drop in NPV]
+* **Strategic Verdict**: [e.g., This is a 'Logistics play' disguised as a 'Tech play'. Focus on long-term vessel contracts.]
+
+REPORT FORMAT REQUIREMENT:
+You must strictly organize your final Risk Intelligence Report into the following exact sections:
+### 1. Inputs: (what financial data and signals you used)
+### 2. Assumptions: (what mathematical and risk assumptions you made for the simulation)
+### 3. Methodologies: (how you modelled the two phases and the Monte Carlo)
+### 4. Limitations: (what financial variables are highly uncertain)
+### 5. Outputs & Recommendations: (your final quantitative verdict and Golden Lever)
 
 Output your full Financial Model + Risk Report as plain text (no JSON).
 """
@@ -777,6 +1107,7 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
                 break
 
         monte_carlo_result = "{}"
+        volatility_scale = 0.15
 
         if function_call:
             stage3_contents.append(ai_message)
@@ -784,11 +1115,18 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
             fc_name = function_call.get("name")
             args = function_call.get("args", {})
             if fc_name == "monte_carlo_simulation_tool":
+                volatility_scale = float(args.get("volatility_scale"))
+                risk_threshold = float(args.get("risk_threshold"))
                 monte_carlo_result = monte_carlo_simulation(
                     base_value=float(args.get("base_value", 5000000)),
                     iterations=int(args.get("iterations", 10000)),
+                    volatility_scale=volatility_scale,
+                    risk_threshold=risk_threshold
                 )
                 print(f"[Engine] Monte Carlo result: {monte_carlo_result}")
+                logic_trace.append(f"Quant configured Monte Carlo with {volatility_scale} volatility and {risk_threshold} risk threshold based on mandate.")
+                if progress_callback:
+                    progress_callback("logic_trace", logic_trace)
                 
             tool_response_part = {
                 "functionResponse": {
@@ -836,6 +1174,9 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
         if progress_callback:
             progress_callback("progress", 100)
             progress_callback("stage3", {"report": stage3_report, "monte_carlo": monte_carlo_result, "model": FLASH})
+            
+            logic_trace.append(f"Quant Specialist executed Monte Carlo with {volatility_scale} scale based on technical risk.")
+            progress_callback("logic_trace", logic_trace)
             
         if check_cancelled and check_cancelled():
             raise InterruptedError("Evaluation cancelled by user after Stage 3")
@@ -1010,6 +1351,19 @@ Output your full Financial Model + Risk Report as plain text (no JSON).
   "Justification": "<2-3 sentences synthesising all 4 stages into a final investment thesis or rejection rationale>"
 }"""
 
+        # --- STAGE 4: PROACTIVE SYNTHESIS ---
+        print("[Engine] Stage 4: Compiling final report with Pivot Intelligence...")
+
+        import re
+        lever_match = re.search(r"\*\s*\*\*Primary Lever\*\*:?\s*(.*?)\n", stage3_report, re.IGNORECASE)
+        if not lever_match:
+            lever_match = re.search(r"Primary Lever[:\s]+(.*?)\n", stage3_report, re.IGNORECASE)
+        golden_lever = lever_match.group(1).strip() if lever_match else "General Market Volatility"
+        
+        logic_trace.append(f"Golden Lever identified: {golden_lever}. Final recommendation weighted against this sensitivity.")
+        if progress_callback:
+            progress_callback("logic_trace", logic_trace)
+
         stage4_prompt = f"""You are the Chief Innovation Officer compiling a final Investment Evaluation Report.
 You have received deep-dive analysis from 3 specialist teams:
 
@@ -1025,6 +1379,10 @@ You have received deep-dive analysis from 3 specialist teams:
 {stage3_report}
 === END ===
 
+=== STAGE 1.75: SIGNAL SCRAPER REPORT ===
+{stage1_75_signals}
+=== END ===
+
 IDEA: "{idea}"
 MONTE CARLO RESULT: {monte_carlo_result}
 
@@ -1033,8 +1391,18 @@ SYNTHESIS REQUIREMENT: As the Chief Innovation Officer, you must provide the fin
 
 Synthesise ALL of the above into this EXACT JSON schema.
 Output ONLY raw JSON — no markdown fences, no preamble, no trailing text.
-Every Rationale field MUST be highly detailed, comprehensive (3-5 sentences), and strictly fact-based. Cite specific data points, statistics, and evidence from the stage reports. DO NOT hallucinate or make up ANY information.
-Populate ALL fields. For Key_Competitors include 3-5 entries with detailed descriptions.
+CRITICAL CONCISE MAPPING: For all JSON rationale fields, you are strictly limited to maximum 2 sentences and under 250 characters. Prioritize "Hard Data" (numbers, dates, competitor names) over qualitative descriptions. The Logic_Trace is handled by the backend—DO NOT include it in your output.
+Populate ALL fields. For Key_Competitors include 3-5 entries with descriptions.
+
+CRITICAL PIVOT RECONCILIATION:
+If the input contains a `RECURSIVE PIVOT DIRECTIVE`, you MUST:
+1. Stop and Analyze: Evaluate if the original idea is dead or if the "Pivot" makes it a PASS.
+2. The "Logic Trace" Validation: Review the Logic_Trace to see how the Interrogator's original vulnerabilities were either confirmed, debunked, or pivoted.
+3. Sensitivity Alignment: Map the Critical Failure Lever ({golden_lever}) from Stage 3 back to the original idea. If the "Lever" is out of the organization's control, the verdict should be VETO.
+
+JSON Output Rule:
+* Update the `Justification` field to lead with the Pivot result: "The original thesis was invalidated by [Conflict], but the Stage 2.5 Pivot reveals a viable path via [New Strategy]."
+* The `Strategic_Signposts` must now reflect the Pivot milestones, not just the original idea's goals.
 
 DATA VERIFICATION DIRECTIVE — MANDATORY:
 As the final synthesizer, you are the LAST line of defense for data quality.
@@ -1074,30 +1442,131 @@ As the final synthesizer, you are the LAST line of defense for data quality.
             output_str = output_str[:-3]
         output_str = output_str.strip()
 
+        import re
+        
+        def clean_custom_escapes(raw_json: str) -> str:
+            # 1. Temporarily replace valid escaped backslashes (\\) with a placeholder
+            temp_json = raw_json.replace(r'\\', '__DOUBLE_SLASH__')
+            # 2. Scrub any single backslash that isn't a valid JSON escape char (", \, /, b, f, n, r, t, u)
+            temp_json = re.sub(r'\\(?=[^\"\\/bfnrtu])', '', temp_json)
+            # 3. Restore valid escaped backslashes
+            return temp_json.replace('__DOUBLE_SLASH__', r'\\')
+
         # Attempt JSON parse — if it fails, ask the model to repair it
         if progress_callback:
             progress_callback("progress", 85)
             
+        output_str = clean_custom_escapes(output_str)        
         try:
             parsed = json.loads(output_str)
         except json.JSONDecodeError as json_err:
             print(f"[Engine] Stage 4 JSON parse failed ({json_err}), attempting repair...")
-            repair_prompt = f"""The following JSON is malformed or truncated. Fix it so it is valid JSON.
-Return ONLY the corrected JSON with no preamble or markdown fences.
+            err_pos = getattr(json_err, "pos", 0)
+            if err_pos > 0:
+                print(f"[Engine] DEBUG JSON Context: {repr(output_str[max(0, err_pos-50) : min(len(output_str), err_pos+50)])}")
+                
+            repair_prompt = f"""You are a master JSON syntax verifier. The following JSON string is malformed. It may have been cut off mid-generation due to a token limit, or it may contain internal syntax errors such as unescaped quotes, missing commas between keys, or unbalanced brackets.
+Carefully review the text, identify all structural and formatting errors, and fully reconstruct the JSON object so that it corresponds to valid JSON. 
+You MUST fix any missing commas, repair unescaped quotes, and gracefully close out any truncated arrays or objects. You have full permission to alter the text formatting to ensure the final output strictly adheres to standard JSON grammar.
+Return ONLY the corrected, fully complete JSON string. No markdown fences.
 
-BROKEN JSON:
-{output_str[:8000]}
+BROKEN STRING:
+{output_str}
 """
-            output_str2 = _call(None, FLASH, repair_prompt, temperature=0.0).strip()
-            if output_str2.startswith("```"):
-                output_str2 = output_str2.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
-            parsed = json.loads(output_str2)
+            try:
+                # Use PRO for repair as it has a larger context window and better reasoning
+                output_str2 = _call(None, PRO, repair_prompt, temperature=0.0, response_mime_type="application/json").strip()
+                if output_str2.startswith("```"):
+                    output_str2 = output_str2.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+                
+                output_str2 = clean_custom_escapes(output_str2)
+                parsed = json.loads(output_str2)
+                print("[Engine] Stage 4: JSON repair successful!")
+                
+            except Exception as repair_err:
+                print(f"[Engine] JSON repair also failed: {repair_err}. Raising ValueError.")
+                with open("/tmp/bad_output_str1.json", "w") as f:
+                    f.write(output_str)
+                with open("/tmp/bad_output_str2.json", "w") as f:
+                    f.write(locals().get("output_str2", ""))
+                raise ValueError(f"AI returned irrevocably malformed JSON. Initial error: {json_err}")
 
         if progress_callback:
             progress_callback("progress", 100)
             
+        # PROACTIVE OVERRIDE: Highlight the Pivot in the UI
+        has_pivot = "RECURSIVE PIVOT DIRECTIVE" in stage2_report
+        parsed["Golden_Lever"] = golden_lever
+        parsed["Pivot_Triggered"] = has_pivot
+        
+        if has_pivot:
+            if parsed.get("Recommendation") == "PROCEED TO INCUBATION":
+                parsed["Recommendation"] = "PIVOT"
+            if "Justification" in parsed:
+                parsed["Justification"] = "🔄 PIVOT TRIGGERED: " + parsed["Justification"]
+            logic_trace.append("Final Synthesis prioritized the Stage 2.5 Pivot over the original thesis.")
+            if progress_callback:
+                progress_callback("logic_trace", logic_trace)
+
         # Hard-override to prevent the LLM from hallucinating the research toggle state
+        parsed["Logic_Trace"] = logic_trace
         parsed["Deep_Research_Utilized"] = deep_research_enabled
+        
+        # --- PROACTIVE UPGRADE: STAGE 5 - THE TACTICAL ROADMAP ---
+        rec = parsed.get("Recommendation", "").upper()
+        if "PROCEED" in rec or "PIVOT" in rec:
+            print("[Engine] Stage 5: Execution Lead generating Tactical Roadmap...")
+            if progress_callback: progress_callback("status", "stage5")
+            
+            top_risks = "\n".join([f"- {r.get('Risk', 'Unknown')}: {r.get('Rationale', 'N/A')}" for r in parsed.get("D0_Scorecard", {}).get("Top_3_Deal_Killing_Risks", [])])
+            
+            stage5_prompt = f"""You are the Execution Lead (Stage 5). 
+The CIO has decided to advance this idea: {idea}
+Recommendation: {rec}
+Primary Sensitivity (Golden Lever): {golden_lever}
+
+TOP 3 RISKS TO MITIGATE:
+{top_risks}
+
+TASK: Generate a tactical execution roadmap.
+Return exactly this JSON schema. No markdown fences.
+{{
+  "OKRs": [
+    {{"Objective": "30-Day: ...", "Key_Results": ["...", "..."]}},
+    {{"Objective": "60-Day: ...", "Key_Results": ["...", "..."]}},
+    {{"Objective": "90-Day: ...", "Key_Results": ["...", "..."]}}
+  ],
+  "Hiring_Priority": [
+    {{"RoleTitle": "...", "Why": "Mitigates Risk X by..."}},
+    {{"RoleTitle": "...", "Why": "Mitigates Risk Y by..."}},
+    {{"RoleTitle": "...", "Why": "Mitigates Risk Z by..."}}
+  ]
+}}
+"""
+            try:
+                stage5_resp = _call(None, FLASH, stage5_prompt, temperature=0.2, response_mime_type="application/json")
+                stage5_resp = stage5_resp.replace("```json", "").replace("```", "").strip()
+                parsed["Tactical_Roadmap"] = json.loads(stage5_resp)
+                logic_trace.append("Stage 5 Execution Lead generated 90-Day Tactical Roadmap and Hiring Plan.")
+                if progress_callback: progress_callback("logic_trace", logic_trace)
+            except Exception as e:
+                print(f"[Engine] Stage 5 Tactical Roadmap failed: {e}")
+                parsed["Tactical_Roadmap"] = None
+        else:
+            parsed["Tactical_Roadmap"] = None
+
+        # PROACTIVE UPGRADE: Explicitly attach all three agent reports to the final payload
+        parsed["Strategist_Report"] = stage1_brief
+        parsed["Deep_Research_Market_Report"] = stage2_report
+        parsed["Quant_Report"] = stage3_report
+        try:
+            parsed["Quant_Monte_Carlo"] = json.loads(monte_carlo_result)
+        except Exception:
+            parsed["Quant_Monte_Carlo"] = None
+            
+        if "ip_white_space_data" in locals() and ip_white_space_data:
+            if "IP_Scan" not in parsed: parsed["IP_Scan"] = {}
+            parsed["IP_Scan"]["White_Space_Map"] = ip_white_space_data
             
         return parsed
 

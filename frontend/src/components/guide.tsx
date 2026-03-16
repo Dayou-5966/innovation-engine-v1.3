@@ -224,7 +224,7 @@ export function Guide({ aiModel }: { aiModel: string }) {
                 </div>
 
                 {/* Visual pipeline flow */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
                     <PipelineStep
                         num={1} title="Strategic Triage" model={aiModel}
                         color="bg-violet-50 dark:bg-violet-950/20 border-violet-100 dark:border-violet-900/40 text-violet-900 dark:text-violet-200"
@@ -234,20 +234,26 @@ export function Guide({ aiModel }: { aiModel: string }) {
                     <PipelineStep
                         num={2} title="Feasibility Scans" model={aiModel}
                         color="bg-sky-50 dark:bg-sky-950/20 border-sky-100 dark:border-sky-900/40 text-sky-900 dark:text-sky-200"
-                        desc="Live internet research: TAM/SAM/SOM sizing, competitor funding rounds, patent filings, regulatory landscape, and Technology Readiness Level."
-                        outputs={["Market sizing (TAM/SAM/SOM)", "Competitor landscape", "IP scan", "Bullish & Bearish Signals"]}
+                        desc="Live internet research: TAM/SAM/SOM sizing, competitor funding, patent filings, and 'White Space' mapping. Resolves data gaps via an Adversarial Duel."
+                        outputs={["Market sizing (TAM/SAM/SOM)", "Competitor landscape", "IP Scan & White Space Map", "Bullish & Bearish Signals", "Adversarial Duel Transcript"]}
                     />
                     <PipelineStep
                         num={3} title="Stress Testing" model={aiModel}
                         color="bg-rose-50 dark:bg-rose-950/20 border-rose-100 dark:border-rose-900/40 text-rose-900 dark:text-rose-200"
-                        desc="Quantitative risk specialist builds a full financial model: CAPEX, OPEX, 5-year revenue projections, NPV/IRR, and runs a Monte Carlo simulation."
-                        outputs={["CAPEX & OPEX breakdown", "Revenue projections (Y1/Y3/Y5)", "NPV, IRR, Payback Period", "Monte Carlo risk range"]}
+                        desc="Quantitative risk specialist builds a full financial model: CAPEX, OPEX, 5-year revenue projections, NPV/IRR, and runs a Monte Carlo simulation. Also identifies a Golden Lever."
+                        outputs={["CAPEX & OPEX breakdown", "Revenue projections (Y1/Y3/Y5)", "Monte Carlo risk range", "Golden Lever sensitivity"]}
                     />
                     <PipelineStep
-                        num={4} title="Compiling Report" model={aiModel}
+                        num={4} title="Synthesis (Watchtower)" model={aiModel}
                         color="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-200"
-                        desc="Chief Innovation Officer synthesises all three stage outputs into a final D0 Scorecard and PROCEED / REJECT recommendation with full justification."
-                        outputs={["D0 Scorecard (out of 50)", "Top 3 deal-killing risks", "Final Recommendation", "Justification narrative"]}
+                        desc="Chief Innovation Officer synthesises all stages into a D0 Scorecard and final justification. The Agentic Watchtower runs a final override check if the Pivot flag is thrown."
+                        outputs={["D0 Scorecard (out of 50)", "Top 3 deal-killing risks", "Agentic Pivot verification", "Final Recommendation"]}
+                    />
+                    <PipelineStep
+                        num={5} title="Tactical Roadmap" model="gemini-flash"
+                        color="bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/40 text-amber-900 dark:text-amber-200"
+                        desc="Execution Lead generates day-one action plans if the verdict is PROCEED or PIVOT, reading the Golden Lever and Top 3 Risks."
+                        outputs={["30/60/90-Day OKRs", "Top 3 Hiring Priorities"]}
                     />
                 </div>
 
@@ -278,8 +284,8 @@ export function Guide({ aiModel }: { aiModel: string }) {
                             desc: "The three risks most likely to kill the project. Each has Probability (Low/Medium/High), Severity (Low/Medium/High/Critical), and specific Mitigation steps."
                         },
                         {
-                            badge: "🌍 Market Intelligence", color: "border-l-4 border-sky-400 dark:border-sky-600 pl-4",
-                            desc: "TAM/SAM/SOM figures with citations. Competitor table with funding data. Supply chain dependencies and regulatory environment."
+                            badge: "🌍 Market Intelligence & White Space", color: "border-l-4 border-sky-400 dark:border-sky-600 pl-4",
+                            desc: "TAM/SAM/SOM figures with citations. Competitor table with funding data. Generative IP White Space mapping via an interactive ScatterChart, supply chain dependencies, and regulatory environment."
                         },
                         {
                             badge: "🟢🔴 Signals & Signposts", color: "border-l-4 border-emerald-400 dark:border-emerald-600 pl-4",
@@ -296,6 +302,22 @@ export function Guide({ aiModel }: { aiModel: string }) {
                         {
                             badge: "🤖 Agent Summaries", color: "border-l-4 border-emerald-400 dark:border-emerald-600 pl-4",
                             desc: "Direct feedback and synthesis from the three core personas: Strategist (alignment), Market Researcher (desirability/feasibility), and Risk Specialist (financial viability)."
+                        },
+                        {
+                            badge: "🕵️‍♂️ Detailed Agent Reports (New)", color: "border-l-4 border-indigo-400 dark:border-indigo-600 pl-4",
+                            desc: "In addition to the Executive Summary, you can now swap to the 'Detailed Strategist Report', 'Market Intelligence', and 'Quant & Risk Report' tabs at the top of the report. These contain the exhaustive deep-dive logic produced by individual agents before the final synthesis. The Quant tab features an interactive Recharts distribution histogram of the Monte Carlo simulation."
+                        },
+                        {
+                            badge: "⚔️ Adversarial Duel", color: "border-l-4 border-orange-400 dark:border-orange-600 pl-4",
+                            desc: "If a Live Conflict Detected flag is raised during Stage 2, the pipeline pauses for a 3-turn debate between the Scout and Researcher agents, which is streamed straight into your Logic Trace terminal."
+                        },
+                        {
+                            badge: "🎯 Tactical Roadmap (OKRs)", color: "border-l-4 border-amber-400 dark:border-amber-600 pl-4",
+                            desc: "At the bottom of the Executive Summary, if the engine approves the idea or suggests a Pivot, it auto-generates 30/60/90-Day OKRs based on the Golden Lever, alongside the top 3 critical hires needed on Day 1."
+                        },
+                        {
+                            badge: "⚡ The Agentic Watchtower (Proactive Engine)", color: "border-l-4 border-amber-500 dark:border-amber-600 pl-4 bg-amber-500/5 dark:bg-amber-500/10 rounded-r-xl py-1",
+                            desc: "When evaluating complex ideas, the engine may discover a 'Black Swan' risk or structural flaw. Instead of just rejecting the idea, the Agentic Watchtower triggers a PIVOT. You will see a glowing alert block mapping out exactly how you should restructure the project model (e.g., Pivot from CAPEX to a Licensing IP model). The 'Golden Lever' widget will also isolate the single biggest financial sensitivity."
                         },
                         {
                             badge: "📥 High-Fidelity PDF Export", color: "border-l-4 border-zinc-400 dark:border-zinc-600 pl-4",

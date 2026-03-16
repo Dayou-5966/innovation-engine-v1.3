@@ -1,0 +1,773 @@
+INFO:     Will watch for changes in these directories: ['/Users/dayou/Desktop/The Innovation Engine v1.3/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [60488] using WatchFiles
+INFO:     Started server process [60550]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+2026-03-15T21:54:18 [INFO] tie.audit: Admin authenticated via legacy single-password mode
+[DB] Using SQLite at: /Users/dayou/Library/Application Support/InnovationEngine/innovation_engine.db
+INFO:     127.0.0.1:64171 - "POST /api/token HTTP/1.1" 200 OK
+2026-03-15T21:54:18 [INFO] tie.audit: Async job created: job_id=9a763dea-6a8d-47dc-846d-4852585444a5 user_id=None model=gemini-2.5-flash-lite idea='Solar power over canals in California...'
+INFO:     127.0.0.1:64172 - "POST /api/evaluate/async HTTP/1.1" 200 OK
+/Users/dayou/Desktop/The Innovation Engine v1.3/backend/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[Engine] Stage 1: Strategist running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=36428chars, timeout=180s, search=True
+INFO:     127.0.0.1:64179 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64191 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64271 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64346 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 8633 chars, finishReason=STOP
+[Engine] Stage 1.75: Signal Scraper running...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3673chars, timeout=180s, search=True
+INFO:     127.0.0.1:64395 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64413 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64421 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64423 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64424 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64426 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64427 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64429 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64430 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64431 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64432 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 6 queries, 14 URLs
+[Engine] _call: SUCCESS in attempt 1, 7170 chars, finishReason=STOP
+[Engine] Stage 1.5: The Ruthless Interrogator generating Research Directives...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3385chars, timeout=180s, search=False
+INFO:     127.0.0.1:64434 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64435 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 2497 chars, finishReason=STOP
+[Engine] Stage 1.5 Interrogator Success. Scout: 677 chars | Researcher: 753 chars
+[Engine] Stage 2: Deep Research disabled by user.
+[Engine] Stage 2: Market Scanner + IP running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=29068chars, timeout=180s, search=True
+INFO:     127.0.0.1:64437 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64438 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64440 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64441 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64442 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64447 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64454 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64456 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64460 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64476 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64502 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64506 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64507 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64508 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64509 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64512 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64515 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64516 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64519 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64521 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64526 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64530 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64531 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 44 queries, 0 URLs
+[Engine] _call: SUCCESS in attempt 1, 55676 chars, finishReason=MAX_TOKENS
+[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...
+[Engine] Stage 3: Deep Research disabled by user.
+[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...
+INFO:     127.0.0.1:64534 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64535 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64536 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64538 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64539 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64540 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64542 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64543 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64546 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+[Engine] Monte Carlo result: {"5th_Percentile_Value": 75595065.09, "Median_Value": 134421119.63, "Risk_Assessment": "High Risk"}
+INFO:     127.0.0.1:64548 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64549 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+[Engine] Stage 4: Synthesizer compiling final report (with Google Search)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=86684chars, timeout=180s, search=True
+INFO:     127.0.0.1:64551 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64552 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64553 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64554 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64555 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64556 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64557 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64559 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64562 - "GET /api/evaluate/status/9a763dea-6a8d-47dc-846d-4852585444a5 HTTP/1.1" 200 OK
+2026-03-15T21:56:20 [INFO] tie.audit: Async job done: job_id=9a763dea-6a8d-47dc-846d-4852585444a5 db_id=111 score=28
+2026-03-15T21:57:04 [INFO] tie.audit: Async job created: job_id=168ce46f-97ed-4052-80e4-aa131d785da1 user_id=None model=gemini-2.5-flash-lite idea='Oceanic AI Compute Clusters: Leveraging the inherent cooling...'
+[Engine] _call: SUCCESS in attempt 1, 21549 chars, finishReason=STOP
+INFO:     ::1:0 - "POST /api/evaluate/async HTTP/1.1" 200 OK
+[Engine] Stage 1: Strategist running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=36823chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 11247 chars, finishReason=STOP
+[Engine] Stage 1.75: Signal Scraper running...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=4068chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 10 queries, 14 URLs
+[Engine] _call: SUCCESS in attempt 1, 4828 chars, finishReason=STOP
+[Engine] Stage 1.5: The Ruthless Interrogator generating Research Directives...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3780chars, timeout=180s, search=False
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 2217 chars, finishReason=STOP
+[Engine] Stage 1.5 Interrogator Success. Scout: 683 chars | Researcher: 741 chars
+[Engine] Stage 2: Deep Research disabled by user.
+[Engine] Stage 2: Market Scanner + IP running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=29443chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 40 queries, 0 URLs
+[Engine] _call: SUCCESS in attempt 1, 31436 chars, finishReason=STOP
+[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...
+[Engine] Stage 3: Deep Research disabled by user.
+[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+[Engine] Monte Carlo result: {"5th_Percentile_Value": 468536622.6, "Median_Value": 826265390.63, "Risk_Assessment": "High Risk"}
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+[Engine] Stage 4: Synthesizer compiling final report (with Google Search)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=62785chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+2026-03-15T21:58:51 [INFO] tie.audit: Async job done: job_id=168ce46f-97ed-4052-80e4-aa131d785da1 db_id=112 score=23
+[Engine] Search Trace captured: 35 queries, 6 URLs
+[Engine] _call: SUCCESS in attempt 1, 19443 chars, finishReason=STOP
+INFO:     ::1:0 - "GET /api/evaluate/status/168ce46f-97ed-4052-80e4-aa131d785da1 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [60550]
+INFO:     Started server process [61580]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61580]
+INFO:     Started server process [61603]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61603]
+INFO:     Started server process [61631]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61631]
+INFO:     Started server process [61641]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61641]
+INFO:     Started server process [61658]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61658]
+INFO:     Started server process [61668]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61668]
+INFO:     Started server process [61681]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61681]
+INFO:     Started server process [61690]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+2026-03-15T22:18:11 [INFO] tie.audit: Admin authenticated via legacy single-password mode
+[DB] Using SQLite at: /Users/dayou/Library/Application Support/InnovationEngine/innovation_engine.db
+INFO:     127.0.0.1:50867 - "POST /api/token HTTP/1.1" 200 OK
+2026-03-15T22:18:12 [INFO] tie.audit: Async job created: job_id=e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 user_id=None model=gemini-2.5-flash-lite idea='Solar power over canals in California...'
+INFO:     127.0.0.1:50868 - "POST /api/evaluate/async HTTP/1.1" 200 OK
+/Users/dayou/Desktop/The Innovation Engine v1.3/backend/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[Engine] Stage 1: Strategist running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=36428chars, timeout=180s, search=True
+INFO:     127.0.0.1:50967 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50993 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51002 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51003 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 8532 chars, finishReason=STOP
+[Engine] Stage 1.75: Signal Scraper running...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3673chars, timeout=180s, search=True
+INFO:     127.0.0.1:51020 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51023 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51142 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51148 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 10 queries, 14 URLs
+[Engine] _call: SUCCESS in attempt 1, 4533 chars, finishReason=STOP
+[Engine] Stage 1.5: The Ruthless Interrogator generating Research Directives...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3385chars, timeout=180s, search=False
+INFO:     127.0.0.1:51151 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 2260 chars, finishReason=STOP
+[Engine] Stage 1.5 Interrogator Success. Scout: 707 chars | Researcher: 803 chars
+[Engine] Stage 2: Deep Research disabled by user.
+[Engine] Stage 2: Market Scanner + IP running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=26143chars, timeout=180s, search=True
+INFO:     127.0.0.1:51154 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51155 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51156 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51174 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51178 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51179 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51180 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51183 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51184 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51185 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51191 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 15 queries, 34 URLs
+[Engine] _call: SUCCESS in attempt 1, 21457 chars, finishReason=STOP
+[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...
+[Engine] Stage 3: Deep Research disabled by user.
+[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...
+INFO:     127.0.0.1:51193 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51199 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51200 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51201 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51202 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51205 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51206 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51207 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51208 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51209 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+[Engine] Monte Carlo result: {"5th_Percentile_Value": 31695820.21, "Median_Value": 194227168.07, "Risk_Assessment": "High Risk"}
+INFO:     127.0.0.1:51211 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51218 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51224 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51225 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+[Engine] Stage 4: Synthesizer compiling final report (with Google Search)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=49673chars, timeout=180s, search=True
+INFO:     127.0.0.1:51227 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51229 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51230 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51231 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51232 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51234 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+2026-03-15T22:19:33 [INFO] tie.audit: Async job done: job_id=e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 db_id=113 score=28
+[Engine] _call: SUCCESS in attempt 1, 16305 chars, finishReason=STOP
+INFO:     127.0.0.1:51235 - "GET /api/evaluate/status/e3f19147-d8a6-47fc-ae9f-60a2ae52baa0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/history HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/history HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/mandate-documents HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/mandate-documents HTTP/1.1" 200 OK
+2026-03-15T22:21:09 [INFO] tie.audit: Genesis Mode: user=admin model=gemini-2.5-flash-lite keywords='subsea data center'
+[Genesis] Attempt 1/5: model=gemini-2.5-flash-lite, keywords='subsea data center'
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=1037chars, timeout=180s, search=True
+[Engine] Search Trace captured: 7 queries, 0 URLs
+[Engine] _call: SUCCESS in attempt 1, 1588 chars, finishReason=STOP
+[Genesis] Generated 3 concepts on attempt 1
+INFO:     ::1:0 - "POST /api/generate HTTP/1.1" 200 OK
+2026-03-15T22:21:20 [INFO] tie.audit: Async job created: job_id=bca795ac-4c55-4a44-9959-4d5890b50b04 user_id=None model=gemini-2.5-flash-lite idea='Subsea AI Compute Hubs: Leveraging the inherent cooling and ...'
+INFO:     ::1:0 - "POST /api/evaluate/async HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+[Engine] Stage 1: Strategist running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=36825chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 10359 chars, finishReason=STOP
+[Engine] Stage 1.75: Signal Scraper running...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=4070chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 10 queries, 9 URLs
+[Engine] _call: SUCCESS in attempt 1, 4549 chars, finishReason=STOP
+[Engine] Stage 1.5: The Ruthless Interrogator generating Research Directives...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3782chars, timeout=180s, search=False
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 2078 chars, finishReason=STOP
+[Engine] Stage 1.5 Interrogator Success. Scout: 579 chars | Researcher: 785 chars
+[Engine] Stage 2: Deep Research disabled by user.
+[Engine] Stage 2: Market Scanner + IP running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=28183chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 26878 chars, finishReason=STOP
+[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...
+[Engine] Stage 3: Deep Research disabled by user.
+[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+[Engine] Monte Carlo result: {"5th_Percentile_Value": 100075689.3, "Median_Value": 622967263.71, "Risk_Assessment": "High Risk"}
+[Engine] Stage 3b attempt 1/3 failed: HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+[Engine] Stage 4: Synthesizer compiling final report (with Google Search)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=57532chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+2026-03-15T22:22:53 [INFO] tie.audit: Async job done: job_id=bca795ac-4c55-4a44-9959-4d5890b50b04 db_id=114 score=18
+[Engine] _call: SUCCESS in attempt 1, 14963 chars, finishReason=STOP
+INFO:     ::1:0 - "GET /api/evaluate/status/bca795ac-4c55-4a44-9959-4d5890b50b04 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61690]
+INFO:     Started server process [62528]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [62528]
+INFO:     Started server process [62538]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+2026-03-15T22:27:54 [INFO] tie.audit: Admin authenticated via legacy single-password mode
+[DB] Using SQLite at: /Users/dayou/Library/Application Support/InnovationEngine/innovation_engine.db
+INFO:     127.0.0.1:51535 - "POST /api/token HTTP/1.1" 200 OK
+2026-03-15T22:27:54 [INFO] tie.audit: Async job created: job_id=06455e8e-36b1-4007-98c0-b7e442a1e756 user_id=None model=gemini-2.5-flash-lite idea='Solar power over canals in California...'
+INFO:     127.0.0.1:51536 - "POST /api/evaluate/async HTTP/1.1" 200 OK
+/Users/dayou/Desktop/The Innovation Engine v1.3/backend/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[Engine] Stage 1: Strategist running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=36428chars, timeout=180s, search=True
+INFO:     127.0.0.1:51539 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51542 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51544 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51545 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 7619 chars, finishReason=STOP
+[Engine] Stage 1.75: Signal Scraper running...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3673chars, timeout=180s, search=True
+INFO:     127.0.0.1:51547 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51548 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 9 queries, 6 URLs
+[Engine] _call: SUCCESS in attempt 1, 3173 chars, finishReason=STOP
+[Engine] Stage 1.5: The Ruthless Interrogator generating Research Directives...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3385chars, timeout=180s, search=False
+INFO:     127.0.0.1:51550 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51551 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 2150 chars, finishReason=STOP
+[Engine] Stage 1.5 Interrogator Success. Scout: 576 chars | Researcher: 633 chars
+[Engine] Stage 2: Deep Research disabled by user.
+[Engine] Stage 2: Market Scanner + IP running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=23590chars, timeout=180s, search=True
+INFO:     127.0.0.1:51554 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51555 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51556 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51557 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51558 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51559 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51560 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51561 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51562 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51563 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51565 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51566 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51567 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 24 queries, 32 URLs
+[Engine] _call: SUCCESS in attempt 1, 25011 chars, finishReason=STOP
+[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...
+[Engine] Stage 3: Deep Research disabled by user.
+[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...
+INFO:     127.0.0.1:51569 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51570 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51571 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51573 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51574 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51575 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51576 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51577 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51578 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51579 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51580 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51581 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51582 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+[Engine] Monte Carlo result: {"5th_Percentile_Value": 30240169.95, "Median_Value": 184615076.61, "Risk_Assessment": "High Risk"}
+INFO:     127.0.0.1:51584 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51585 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51586 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+[Engine] Stage 4: Synthesizer compiling final report (with Google Search)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=51365chars, timeout=180s, search=True
+INFO:     127.0.0.1:51588 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51589 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51590 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51591 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51592 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51593 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+2026-03-15T22:29:21 [INFO] tie.audit: Async job done: job_id=06455e8e-36b1-4007-98c0-b7e442a1e756 db_id=115 score=42
+[Engine] _call: SUCCESS in attempt 1, 12183 chars, finishReason=STOP
+INFO:     127.0.0.1:51594 - "GET /api/evaluate/status/06455e8e-36b1-4007-98c0-b7e442a1e756 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/history HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/history HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/mandate-documents HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/mandate-documents HTTP/1.1" 200 OK
+2026-03-15T22:29:40 [INFO] tie.audit: Async job created: job_id=9562ba5f-875f-4da5-a88d-7b21f1f0cc10 user_id=None model=gemini-2.5-flash-lite idea='Subsea AI Compute Hubs: Leveraging the inherent cooling and ...'
+INFO:     ::1:0 - "POST /api/evaluate/async HTTP/1.1" 200 OK
+[Engine] Stage 1: Strategist running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=36825chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 8953 chars, finishReason=STOP
+[Engine] Stage 1.75: Signal Scraper running...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=4070chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 8 queries, 15 URLs
+[Engine] _call: SUCCESS in attempt 1, 4985 chars, finishReason=STOP
+[Engine] Stage 1.5: The Ruthless Interrogator generating Research Directives...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3782chars, timeout=180s, search=False
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 2360 chars, finishReason=STOP
+[Engine] Stage 1.5 Interrogator Success. Scout: 703 chars | Researcher: 878 chars
+[Engine] Stage 2: Deep Research disabled by user.
+[Engine] Stage 2: Market Scanner + IP running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=27588chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 24 queries, 30 URLs
+[Engine] _call: SUCCESS in attempt 1, 24527 chars, finishReason=STOP
+[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...
+[Engine] Stage 3: Deep Research disabled by user.
+[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+[Engine] Monte Carlo result: {"5th_Percentile_Value": -17673011.35, "Median_Value": 196505273.92, "Risk_Assessment": "High Risk"}
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+[Engine] Stage 4: Synthesizer compiling final report (with Google Search)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=54202chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+2026-03-15T22:31:06 [INFO] tie.audit: Async job done: job_id=9562ba5f-875f-4da5-a88d-7b21f1f0cc10 db_id=116 score=21
+[Engine] Search Trace captured: 43 queries, 0 URLs
+[Engine] _call: SUCCESS in attempt 1, 14322 chars, finishReason=STOP
+INFO:     ::1:0 - "GET /api/evaluate/status/9562ba5f-875f-4da5-a88d-7b21f1f0cc10 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [62538]
+INFO:     Started server process [62883]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [62883]
+INFO:     Started server process [62893]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+2026-03-15T22:36:10 [INFO] tie.audit: Async job created: job_id=034ddda3-0a0e-4099-a3e7-bf15eafe1b9f user_id=None model=gemini-2.5-flash-lite idea='Subsea AI Compute Hubs: Leveraging the inherent cooling and ...'
+[DB] Using SQLite at: /Users/dayou/Library/Application Support/InnovationEngine/innovation_engine.db
+INFO:     ::1:0 - "POST /api/evaluate/async HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+/Users/dayou/Desktop/The Innovation Engine v1.3/backend/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[Engine] Stage 1: Strategist running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=36825chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 10303 chars, finishReason=STOP
+[Engine] Stage 1.75: Signal Scraper running...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=4070chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 10 queries, 13 URLs
+[Engine] _call: SUCCESS in attempt 1, 5457 chars, finishReason=STOP
+[Engine] Stage 1.5: The Ruthless Interrogator generating Research Directives...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3782chars, timeout=180s, search=False
+[Engine] _call: SUCCESS in attempt 1, 2044 chars, finishReason=STOP
+[Engine] Stage 1.5 Interrogator Success. Scout: 646 chars | Researcher: 679 chars
+[Engine] Stage 2: Deep Research disabled by user.
+[Engine] Stage 2: Market Scanner + IP running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=28895chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+[Engine] DEBUG raw candidate payload: {"content": {"role": "model"}, "finishReason": "STOP", "index": 0, "groundingMetadata": {}}
+[Engine] _call attempt 1/5 FAILED: ValueError: Model returned empty text (finishReason=STOP, attempt 1)
+[Engine] Retrying in 6s...
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 27 queries, 32 URLs
+[Engine] _call: SUCCESS in attempt 2, 31798 chars, finishReason=STOP
+[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...
+[Engine] Stage 3: Deep Research disabled by user.
+[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+[Engine] Monte Carlo result: {"5th_Percentile_Value": -38057668.76, "Median_Value": 496732268.73, "Risk_Assessment": "High Risk"}
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+[Engine] Stage 4: Synthesizer compiling final report (with Google Search)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=63051chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+2026-03-15T22:37:54 [INFO] tie.audit: Async job done: job_id=034ddda3-0a0e-4099-a3e7-bf15eafe1b9f db_id=117 score=18
+[Engine] Search Trace captured: 40 queries, 0 URLs
+[Engine] _call: SUCCESS in attempt 1, 16572 chars, finishReason=STOP
+INFO:     ::1:0 - "GET /api/evaluate/status/034ddda3-0a0e-4099-a3e7-bf15eafe1b9f HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [62893]
+INFO:     Started server process [63268]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63268]
+INFO:     Started server process [63279]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+[DB] Using SQLite at: /Users/dayou/Library/Application Support/InnovationEngine/innovation_engine.db
+INFO:     ::1:0 - "GET /api/history HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/history HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/mandate-documents HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/mandate-documents HTTP/1.1" 200 OK
+2026-03-15T22:49:36 [INFO] tie.audit: Genesis Mode: user=admin model=gemini-2.5-flash-lite keywords='subsea data center'
+/Users/dayou/Desktop/The Innovation Engine v1.3/backend/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[Genesis] Attempt 1/5: model=gemini-2.5-flash-lite, keywords='subsea data center'
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=1037chars, timeout=180s, search=True
+[Engine] Search Trace captured: 5 queries, 7 URLs
+[Engine] _call: SUCCESS in attempt 1, 3346 chars, finishReason=STOP
+[Genesis] Attempt 1/5 failed: Extra data: line 18 column 1 (char 1662)
+[Genesis] Retrying in 6s...
+[Genesis] Attempt 2/5: model=gemini-2.5-flash-lite, keywords='subsea data center'
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=1037chars, timeout=180s, search=True
+[Engine] Search Trace captured: 5 queries, 9 URLs
+[Engine] _call: SUCCESS in attempt 1, 1756 chars, finishReason=STOP
+[Genesis] Generated 3 concepts on attempt 2
+INFO:     ::1:0 - "POST /api/generate HTTP/1.1" 200 OK
+2026-03-15T22:49:56 [INFO] tie.audit: Async job created: job_id=cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 user_id=None model=gemini-2.5-flash-lite idea='Oceanic AI Compute Clusters: Leveraging the natural cooling ...'
+INFO:     ::1:0 - "POST /api/evaluate/async HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+[Engine] Stage 1: Strategist running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=36993chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 9979 chars, finishReason=STOP
+[Engine] Stage 1.75: Signal Scraper running...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=4238chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 9 queries, 0 URLs
+[Engine] _call: SUCCESS in attempt 1, 9669 chars, finishReason=STOP
+[Engine] Stage 1.5: The Ruthless Interrogator generating Research Directives...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3950chars, timeout=180s, search=False
+[Engine] _call: SUCCESS in attempt 1, 2265 chars, finishReason=STOP
+[Engine] Stage 1.5 Interrogator Success. Scout: 682 chars | Researcher: 768 chars
+[Engine] Stage 2: Deep Research disabled by user.
+[Engine] Stage 2: Market Scanner + IP running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=33261chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 19 queries, 0 URLs
+[Engine] _call: SUCCESS in attempt 1, 59844 chars, finishReason=MAX_TOKENS
+[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...
+[Engine] Stage 3: Deep Research disabled by user.
+[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+[Engine] Monte Carlo result: {"5th_Percentile_Value": 3791716.46, "Median_Value": 316427304.71, "Risk_Assessment": "High Risk"}
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+[Engine] Stage 4: Compiling final report with Pivot Intelligence...
+[Engine] Stage 4: Synthesizer compiling final report (with Google Search)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=97355chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+2026-03-15T22:51:49 [INFO] tie.audit: Async job done: job_id=cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 db_id=118 score=23
+[Engine] _call: SUCCESS in attempt 1, 14591 chars, finishReason=STOP
+INFO:     ::1:0 - "GET /api/evaluate/status/cc95434d-8ee8-4c6e-b657-2ca6f23ba7d0 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/history HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/history HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/mandate-documents HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/mandate-documents HTTP/1.1" 200 OK
+2026-03-15T22:57:55 [INFO] tie.audit: Async job created: job_id=df929153-956d-49fd-a579-cf9792256f92 user_id=None model=gemini-2.5-flash-lite idea='Oceanic AI Compute Clusters: Leveraging the natural cooling ...'
+INFO:     ::1:0 - "POST /api/evaluate/async HTTP/1.1" 200 OK
+[Engine] Stage 1: Strategist running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=36993chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+[Engine] _call: SUCCESS in attempt 1, 8569 chars, finishReason=STOP
+[Engine] Stage 1.75: Signal Scraper running...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=4238chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 10 queries, 20 URLs
+[Engine] _call: SUCCESS in attempt 1, 5470 chars, finishReason=STOP
+[Engine] Stage 1.5: The Ruthless Interrogator generating Research Directives...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=3950chars, timeout=180s, search=False
+[Engine] _call: SUCCESS in attempt 1, 1948 chars, finishReason=STOP
+[Engine] Stage 1.5 Interrogator Success. Scout: 565 chars | Researcher: 622 chars
+[Engine] Stage 2: Deep Research disabled by user.
+[Engine] Stage 2: Market Scanner + IP running (Synthesis)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=27189chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+[Engine] Search Trace captured: 53 queries, 0 URLs
+[Engine] _call: SUCCESS in attempt 1, 31603 chars, finishReason=STOP
+[Engine] Stage 3 pre-pass: Searching for financial benchmarks (Deep Research)...
+[Engine] Stage 3: Deep Research disabled by user.
+[Engine] Stage 3: Quant + Risk running (with Monte Carlo tool)...
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+[Engine] Monte Carlo result: {"5th_Percentile_Value": 1442844.06, "Median_Value": 280098631.96, "Risk_Assessment": "High Risk"}
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+[Engine] Stage 4: Compiling final report with Pivot Intelligence...
+[Engine] Stage 4: Synthesizer compiling final report (with Google Search)...
+[Engine] _call: model=gemini-2.5-flash-lite, prompt=62622chars, timeout=180s, search=True
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+[Engine] DEBUG raw candidate payload: {"content": {"role": "model"}, "finishReason": "STOP", "index": 0, "groundingMetadata": {}}
+[Engine] _call attempt 1/5 FAILED: ValueError: Model returned empty text (finishReason=STOP, attempt 1)
+[Engine] Retrying in 6s...
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+2026-03-15T22:59:49 [INFO] tie.audit: Async job done: job_id=df929153-956d-49fd-a579-cf9792256f92 db_id=119 score=24
+[Engine] _call: SUCCESS in attempt 2, 13037 chars, finishReason=STOP
+INFO:     ::1:0 - "GET /api/evaluate/status/df929153-956d-49fd-a579-cf9792256f92 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63279]
+INFO:     Started server process [64051]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'engine.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64051]
+INFO:     Started server process [64062]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
